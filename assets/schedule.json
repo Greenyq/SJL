@@ -1,0 +1,427 @@
+{
+  "season": "2026/27",
+  "timezone": "America/Winnipeg",
+  "source": "Super_Junior_League_Schedule_and_Costs(1).xlsx",
+  "matches": [
+    {
+      "id": "2026-10-25-1",
+      "date": "2026-10-25",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Birds",
+      "away": "Dynamo"
+    },
+    {
+      "id": "2026-10-25-2",
+      "date": "2026-10-25",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-10-25-3",
+      "date": "2026-10-25",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-11-01-1",
+      "date": "2026-11-01",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-11-01-2",
+      "date": "2026-11-01",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Dynamo",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-11-01-3",
+      "date": "2026-11-01",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-11-08-1",
+      "date": "2026-11-08",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-11-08-2",
+      "date": "2026-11-08",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Birds",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-11-08-3",
+      "date": "2026-11-08",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Green Strikers",
+      "away": "Prairie Sky FC"
+    },
+    {
+      "id": "2026-11-15-1",
+      "date": "2026-11-15",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Dynamo"
+    },
+    {
+      "id": "2026-11-15-2",
+      "date": "2026-11-15",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Birds",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-11-15-3",
+      "date": "2026-11-15",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-11-22-1",
+      "date": "2026-11-22",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Birds"
+    },
+    {
+      "id": "2026-11-22-2",
+      "date": "2026-11-22",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Dynamo",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-11-22-3",
+      "date": "2026-11-22",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-11-29-1",
+      "date": "2026-11-29",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Birds",
+      "away": "Dynamo"
+    },
+    {
+      "id": "2026-11-29-2",
+      "date": "2026-11-29",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-11-29-3",
+      "date": "2026-11-29",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Green Strikers",
+      "away": "Prairie Sky FC"
+    },
+    {
+      "id": "2026-12-06-1",
+      "date": "2026-12-06",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-12-06-2",
+      "date": "2026-12-06",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Dynamo",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-12-06-3",
+      "date": "2026-12-06",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-12-13-1",
+      "date": "2026-12-13",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-12-13-2",
+      "date": "2026-12-13",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Birds",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2026-12-13-3",
+      "date": "2026-12-13",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-12-20-1",
+      "date": "2026-12-20",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Dynamo"
+    },
+    {
+      "id": "2026-12-20-2",
+      "date": "2026-12-20",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Birds",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2026-12-20-3",
+      "date": "2026-12-20",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Green Strikers",
+      "away": "Prairie Sky FC"
+    },
+    {
+      "id": "2027-01-03-1",
+      "date": "2027-01-03",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Birds"
+    },
+    {
+      "id": "2027-01-03-2",
+      "date": "2027-01-03",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Dynamo",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2027-01-03-3",
+      "date": "2027-01-03",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2027-01-10-1",
+      "date": "2027-01-10",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Birds",
+      "away": "Dynamo"
+    },
+    {
+      "id": "2027-01-10-2",
+      "date": "2027-01-10",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2027-01-10-3",
+      "date": "2027-01-10",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2027-01-17-1",
+      "date": "2027-01-17",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2027-01-17-2",
+      "date": "2027-01-17",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Dynamo",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2027-01-17-3",
+      "date": "2027-01-17",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Green Strikers",
+      "away": "Prairie Sky FC"
+    },
+    {
+      "id": "2027-01-24-1",
+      "date": "2027-01-24",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2027-01-24-2",
+      "date": "2027-01-24",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Birds",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2027-01-24-3",
+      "date": "2027-01-24",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
+    },
+    {
+      "id": "2027-01-31-1",
+      "date": "2027-01-31",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 1,
+      "home": "Prairie Sky FC",
+      "away": "Dynamo"
+    },
+    {
+      "id": "2027-01-31-2",
+      "date": "2027-01-31",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U10",
+      "field": 2,
+      "home": "Birds",
+      "away": "Green Strikers"
+    },
+    {
+      "id": "2027-01-31-3",
+      "date": "2027-01-31",
+      "start": "19:30",
+      "end": "20:30",
+      "ageGroup": "U13",
+      "field": 3,
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Green Strikers"
+    }
+  ]
+}
