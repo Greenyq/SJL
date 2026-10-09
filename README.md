@@ -59,3 +59,21 @@ New league profiles appear in the public statistics API only with the separate p
 Teams initially come from the actual imported schedule (eight teams). Add confirmed teams, including new YFC teams, in **League Roster → Add a League Team**. Adding a team does not invent fixtures or modify the source schedule.
 
 `assets/league-policies.json` contains English registration editions of the three supplied documents and a separate media permission/participation acknowledgement. No liability release was supplied, so the media form does not purport to waive liability or guarantee insurance. The league stores the accepted document payload/hash/version, typed guardian name and timestamp. Change the version when changing policy text; prior snapshots remain in `league_policy_versions`. Financial and team-count figures in the translated regulations reflect the supplied document rather than being recalculated.
+
+
+### Team schedules and club email notifications
+
+Each private player profile includes only fixtures matching its registered club and age group, using the imported schedule and Winnipeg time. Upcoming and past fixtures are separate; new teams without fixtures show an honest empty state. Original schedule aliases are normalized before filtering.
+
+New league registrations require a parent phone and an explicit acknowledgement that registration/contact information is shared with the selected club. Parent email/name come from the signed-in account. The notification includes player name, birth year, team, parent name/email/phone and media choices. No passwords or recovery codes are sent. Existing registrations remain intact, with no retroactive notification or inferred sharing permission.
+
+Private club recipient addresses are seeded from the organizer's screenshot and confirmed Green Strikers mapping; YFC uses `yfcsocceracademy@gmail.com`. Edit recipient addresses in **Admin → League Roster → Club Email Notifications**. Only the selected club receives a message, with the parent's email as Reply-To.
+
+Sending requires **Resend** setup:
+
+1. Verify your sending domain in Resend using its supplied DNS records. Prefer a dedicated sending subdomain; do not replace the website's A/CNAME records or existing mailbox MX records.
+2. Create a sending API key and set `RESEND_API_KEY` in the Render Node service's Environment (never commit it or put it in browser code).
+3. Set `CLUB_MAIL_FROM` to a sender on that verified domain, e.g. `Super Junior League <registrations@notify.superjuniorleague.ca>`.
+4. After Render restarts, queued notifications are processed automatically. Verify acceptance in Admin and delivery in Resend logs.
+
+The SQLite outbox is written atomically with registration and survives restart. Without sending credentials messages remain queued. Failures retry with bounded backoff and the same Resend idempotency key, up to 23 hours after first attempt; uncertain older sends stop at `needs_review` so they cannot silently duplicate beyond the provider's 24-hour retention window. Check provider logs before resolving those manually. `accepted` means the provider accepted the message, not verified inbox delivery. Admin can retry unsent/failed/blocked messages. Recipient changes affect only notifications with no attempted sends. Registration never depends on the provider being available.
