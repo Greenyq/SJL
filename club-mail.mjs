@@ -9,16 +9,27 @@ const defaults={
 };
 // Private configuration: club addresses and registration payloads never appear in public APIs.
 export function setupClubMail({db,clubs,InputError,email,env=process.env,send=fetch,startWorker=true}){
- db.exec(`CREATE TABLE IF NOT EXISTS league_club_contacts(club TEXT PRIMARY KEY,email TEXT NOT NULL);
- CREATE TABLE IF NOT EXISTS league_mail_outbox(id TEXT PRIMARY KEY,entryId TEXT UNIQUE NOT NULL REFERENCES league_entries(id),club TEXT NOT NULL,recipient TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'queued',attempts INTEGER NOT NULL DEFAULT 0,nextAttempt INTEGER NOT NULL DEFAULT 0,firstAttempt INTEGER,createdAt TEXT NOT NULL,acceptedAt TEXT,providerId TEXT,error TEXT NOT NULL DEFAULT '');`);
+ const outboxSchema=`CREATE TABLE IF NOT EXISTS league_mail_outbox(id TEXT PRIMARY KEY,entryId TEXT NOT NULL REFERENCES league_entries(id),kind TEXT NOT NULL DEFAULT 'club' CHECK(kind IN ('club','parent')),club TEXT NOT NULL,recipient TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'queued',attempts INTEGER NOT NULL DEFAULT 0,nextAttempt INTEGER NOT NULL DEFAULT 0,firstAttempt INTEGER,createdAt TEXT NOT NULL,acceptedAt TEXT,providerId TEXT,error TEXT NOT NULL DEFAULT '',UNIQUE(entryId,kind));`;
+ db.exec('CREATE TABLE IF NOT EXISTS league_club_contacts(club TEXT PRIMARY KEY,email TEXT NOT NULL);');
+ const columns=db.prepare('PRAGMA table_info(league_mail_outbox)').all();
+ if(columns.length&&!columns.some(c=>c.name==='kind')){
+  db.exec('BEGIN IMMEDIATE');try{
+   db.exec('ALTER TABLE league_mail_outbox RENAME TO league_mail_outbox_old;');db.exec(outboxSchema);
+   db.exec(`INSERT INTO league_mail_outbox(id,entryId,kind,club,recipient,payload,status,attempts,nextAttempt,firstAttempt,createdAt,acceptedAt,providerId,error) SELECT id,entryId,'club',club,recipient,payload,status,attempts,nextAttempt,firstAttempt,createdAt,acceptedAt,providerId,error FROM league_mail_outbox_old; DROP TABLE league_mail_outbox_old;`);
+   db.exec('COMMIT');
+  }catch(error){db.exec('ROLLBACK');throw error}
+ }else db.exec(outboxSchema);
  for(const club of clubs)db.prepare('INSERT OR IGNORE INTO league_club_contacts VALUES(?,?)').run(club,defaults[club]||'');
  const configured=()=>Boolean(env.RESEND_API_KEY&&env.CLUB_MAIL_FROM);
- const forEntry=id=>db.prepare('SELECT id,status,recipient,acceptedAt,attempts,error FROM league_mail_outbox WHERE entryId=?').get(id)||null;
+ const forEntry=(id,kind='club')=>db.prepare('SELECT id,status,recipient,acceptedAt,attempts,error FROM league_mail_outbox WHERE entryId=? AND kind=?').get(id,kind)||null;
  function enqueue({id,firstName,lastName,birthYear,team,account,contactPhone,consent,signedAt}){
   const recipient=db.prepare('SELECT email FROM league_club_contacts WHERE club=?').get(team.club)?.email||'';
   const content=[`New Super Junior League player registration`, `Registration ID: ${id}`,`Player: ${firstName} ${lastName}`,`Birth year: ${birthYear}`,`Club: ${team.club}`,`Team: ${team.name}`,`Parent / guardian: ${account.name}`,`Parent email: ${account.email}`,`Parent phone: ${contactPhone}`,`Photos / video: ${consent.media?'YES':'NO'}`,`Interviews: ${consent.interviews?'YES':'NO'}`,`Public statistics: ${consent.publicStats?'YES':'NO'}`,`Submitted: ${signedAt}`, '', 'Status: awaiting league roster review. This notification does not confirm eligibility or roster approval.', 'Contact the parent directly to confirm the club roster. Registration details were shared with the selected club by the parent; keep them private and use them only for registration and team administration.'].join('\n');
   const payload={subject:`SJL registration — ${team.name}`,text:content,reply_to:account.email};
-  db.prepare('INSERT INTO league_mail_outbox(id,entryId,club,recipient,payload,createdAt) VALUES(?,?,?,?,?,?)').run(randomUUID(),id,team.club,recipient,JSON.stringify(payload),signedAt);
+  const insert=db.prepare('INSERT INTO league_mail_outbox(id,entryId,kind,club,recipient,payload,createdAt) VALUES(?,?,?,?,?,?,?)');
+  insert.run(randomUUID(),id,'club',team.club,recipient,JSON.stringify(payload),signedAt);
+  const parentText=[`Hi ${account.name},`, '', 'We have received your Super Junior League registration.', `Player: ${firstName} ${lastName}`, `Birth year: ${birthYear}`, `Club: ${team.club}`, `Team: ${team.name}`, `Season: 2026/27`, `Registration ID: ${id}`, '', 'Status: awaiting league roster review. This confirms receipt of your application, not approval or eligibility.', 'Your selected club has been queued to receive your registration and contact details. The league administrator will review the roster and link official player statistics.', '', `Photos / video permission: ${consent.media?'YES':'NO'}`, `Interview permission: ${consent.interviews?'YES':'NO'}`, `Public statistics permission: ${consent.publicStats?'YES':'NO'}`, '', 'Sign in to your parent account on the league website to view the player profile, team schedule, status and confirmed statistics. You can also change your media permissions there.', 'If any registration details are incorrect, contact your selected club or the league organizer.'].join('\n');
+  insert.run(randomUUID(),id,'parent',team.club,account.email,JSON.stringify({subject:`SJL registration received — ${firstName} ${lastName}`,text:parentText,...(recipient?{reply_to:recipient}:{})}),signedAt);
  }
  let running=false;
  async function flush(){
@@ -39,7 +50,7 @@ export function setupClubMail({db,clubs,InputError,email,env=process.env,send=fe
    }
   }finally{running=false}
  }
- function updateContact(club,value){if(!clubs.includes(club))throw new InputError('Choose a league club.');const address=email(value).toLowerCase();if(!address)throw new InputError('Club email is required.');db.prepare('UPDATE league_club_contacts SET email=? WHERE club=?').run(address,club);db.prepare("UPDATE league_mail_outbox SET recipient=?,status='queued',nextAttempt=0,error='' WHERE club=? AND attempts=0 AND status IN ('queued','blocked')").run(address,club)}
+ function updateContact(club,value){if(!clubs.includes(club))throw new InputError('Choose a league club.');const address=email(value).toLowerCase();if(!address)throw new InputError('Club email is required.');db.prepare('UPDATE league_club_contacts SET email=? WHERE club=?').run(address,club);db.prepare("UPDATE league_mail_outbox SET recipient=?,status='queued',nextAttempt=0,error='' WHERE kind='club' AND club=? AND attempts=0 AND status IN ('queued','blocked')").run(address,club)}
  function retry(id){const row=db.prepare('SELECT * FROM league_mail_outbox WHERE id=?').get(id);if(!row)throw new InputError('Notification not found.',404);if(!['queued','failed','blocked'].includes(row.status))throw new InputError('This notification cannot be retried. Check its status.',409);db.prepare("UPDATE league_mail_outbox SET status='queued',nextAttempt=0 WHERE id=?").run(id)}
  if(startWorker){setInterval(()=>{void flush().catch(()=>console.error('Club email queue could not be processed.'))},60000).unref();void flush().catch(()=>console.error('Club email queue could not be processed.'))}
  return{enqueue,flush,forEntry,retry,updateContact,overview:()=>({configured:configured(),contacts:db.prepare('SELECT * FROM league_club_contacts ORDER BY club').all()})};
