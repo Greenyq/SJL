@@ -1,0 +1,24 @@
+# Provision a Node web service. Existing runtime: static services need replacement.
+# Review the paid service + persistent disk configuration before applying.
+services:
+  - type: web
+    name: super-junior-league-app
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    disk:
+      name: sjl-data
+      mountPath: /var/data/sjl
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data/sjl
+      - key: ADMIN_PASSWORD
+        sync: false
