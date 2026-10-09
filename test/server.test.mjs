@@ -22,7 +22,7 @@ async function login(){const{response}=await request('/api/admin/login','POST',{
 before(async()=>{dir=await mkdtemp(join(tmpdir(),'sjl-test-'));await start()});
 after(async()=>{await stop();await rm(dir,{recursive:true,force:true})});
 test('serves home/admin and exact imported schedule; keeps internal files private',async()=>{
- const home=await fetch(base+'/');assert.equal(home.status,200);const html=await home.text();assert.match(html,/REGISTER A CLUB/);assert.match(html,/REGISTER A PLAYER/);assert.match(html,/assets\/site.js/);assert.doesNotMatch(html,/NORTH STARS|LEAGUE TABLE/);
+ const home=await fetch(base+'/');assert.equal(home.status,200);const html=await home.text();assert.match(html,/REGISTER A CLUB/);assert.match(html,/REGISTER A LEAGUE PLAYER/);assert.match(html,/assets\/site.js/);assert.doesNotMatch(html,/NORTH STARS|LEAGUE TABLE/);
  assert.equal((await fetch(base+'/admin')).status,200);
  const schedule=await(await fetch(base+'/assets/schedule.json')).json();assert.equal(schedule.matches.length,42);assert.equal(new Set(schedule.matches.map(m=>m.date)).size,14);assert.equal(schedule.matches[0].date,'2026-10-25');assert.equal(schedule.matches.at(-1).date,'2027-01-31');assert.equal(schedule.matches.filter(m=>m.ageGroup==='U10').length,28);assert.equal(schedule.matches.filter(m=>m.ageGroup==='U13').length,14);assert.equal(schedule.matches.some(m=>m.home==='YFC'||m.away==='YFC'),false);
  for(const path of ['/server.mjs','/package.json','/.env','/.data/sjl.sqlite','/assets/player-stats.json','/assets/../server.mjs'])assert.equal((await fetch(base+path)).status,404,path);

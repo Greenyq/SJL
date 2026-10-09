@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { setupLeague } from './league.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -41,6 +42,7 @@ function requireAdmin(req){if(!session(req))throw new InputError('Sign in as adm
 async function body(req){if(!req.headers['content-type']?.startsWith('application/json'))throw new InputError('JSON content is required.',415);let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>16384)throw new InputError('Request is too large.',413);chunks.push(chunk)}try{const value=JSON.parse(Buffer.concat(chunks).toString());if(!value||typeof value!=='object'||Array.isArray(value))throw Error();return value}catch{throw new InputError('Invalid JSON request.')}}
 function validateStats(p){if(!clubs.includes(p.club))throw new InputError('Choose a league club.');if(!['U10','U13'].includes(p.ageGroup))throw new InputError('Choose U10 or U13.');return{name:text(p.name,'Player name'),club:p.club,ageGroup:p.ageGroup,goals:integer(p.goals,'Goals',0,10000),assists:integer(p.assists,'Assists',0,10000),cleanSheets:integer(p.cleanSheets,'Clean sheets',0,1000)}}
 const allPlayers=()=>db.prepare('SELECT * FROM players ORDER BY name COLLATE NOCASE').all();
+const league=setupLeague({db,root,clubs,InputError,json,text,integer,email,rate,body,cookieSecure});
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Content-Security-Policy',csp);
  try{
@@ -50,7 +52,8 @@ const server=http.createServer(async(req,res)=>{
    if(origin){const host=req.headers.host;const allowed=process.env.PUBLIC_ORIGIN?new URL(process.env.PUBLIC_ORIGIN).origin:null;if(allowed?origin!==allowed:!['http://'+host,'https://'+host].includes(origin))throw new InputError('Request origin is not allowed.',403)}
   }
   if(path==='/health'&&req.method==='GET')return json(res,200,{ok:true});
-  if(path==='/api/stats'&&req.method==='GET')return json(res,200,{season:'2026/27',players:allPlayers()});
+  if(path==='/api/stats'&&req.method==='GET')return json(res,200,{season:'2026/27',players:league.publicPlayers(allPlayers())});
+  if(await league.handle(req,res,path,requireAdmin))return;
   if(path==='/api/register'&&req.method==='POST'){
    rate(req,'register',15,60*60*1000);const b=await body(req);let payload;
    if(b.website)throw new InputError('Unable to submit registration.');
@@ -83,7 +86,7 @@ const server=http.createServer(async(req,res)=>{
     db.prepare('INSERT INTO players VALUES(?,?,?,?,?,?,?,1)').run(id,p.name,p.club,p.ageGroup,p.goals,p.assists,p.cleanSheets);return json(res,201,{player:db.prepare('SELECT * FROM players WHERE id=?').get(id)});
    }
    if(/^\/api\/admin\/players\/[^/]+$/.test(path)&&req.method==='PUT'){
-    const id=path.split('/').at(-1),b=await body(req),p=validateStats(b);integer(b.version,'Version',1,Number.MAX_SAFE_INTEGER);
+    const id=path.split('/').at(-1),b=await body(req),p=validateStats(b);integer(b.version,'Version',1,Number.MAX_SAFE_INTEGER);league.protectStatsIdentity(id,p);
     if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=? AND id<>?').get(p.name,p.club,p.ageGroup,id))throw new InputError('This player already exists in this club and age group.',409);
     const result=db.prepare('UPDATE players SET name=?,club=?,ageGroup=?,goals=?,assists=?,cleanSheets=?,version=version+1 WHERE id=? AND version=?').run(p.name,p.club,p.ageGroup,p.goals,p.assists,p.cleanSheets,id,b.version);
     if(!result.changes)throw new InputError('This record changed or no longer exists. Reload it before saving.',409);return json(res,200,{player:db.prepare('SELECT * FROM players WHERE id=?').get(id)});
@@ -94,6 +97,8 @@ const server=http.createServer(async(req,res)=>{
   // Explicit public allowlist: never serve source, credentials or the database directory.
   let file;
   if(path==='/'||path==='/index.html')file=join(root,'index.html');
+  else if(path==='/league-register'||path==='/league-register/')file=join(root,'league-register.html');
+  else if(path==='/parent'||path==='/parent/')file=join(root,'parent.html');
   else if(path==='/admin'||path==='/admin/'||path==='/admin.html')file=join(root,'admin.html');
   else if(/^\/assets\/[a-zA-Z0-9_-]+\.(jpg|png|svg|css|js|json)$/.test(path)&&path!=='/assets/player-stats.json')file=join(root,path);
   else throw new InputError('Page not found.',404);

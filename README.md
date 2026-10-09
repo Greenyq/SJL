@@ -30,7 +30,7 @@ To import a replacement workbook, run `python scripts/import-schedule.py /absolu
 
 A static Render site cannot run the registration API, database or authenticated admin dashboard. `render.yaml` prepares a **Node web service** with a persistent disk. Render runtimes are immutable: if the existing SJL service is static, provision the web service, verify it, then switch the website link/domain. Do not assume merging this PR changes a static site's hosting type.
 
-The blueprint uses a paid `starter` web service and a 1 GB disk and is a configuration proposal only. It has not been provisioned. Confirm the target workspace and hosting plan before applying it.
+The live application runs on the paid `starter` Node web service with a 1 GB persistent disk in the BNL League workspace. The blueprint describes that configuration.
 
 Production settings:
 
@@ -45,3 +45,17 @@ The app binds to Render's `PORT` on `0.0.0.0`. Production refuses startup if the
 ## Club logos
 
 Prairie Sky FC links to https://prairieskyfc.ca. Original logos are preserved and displayed on matching background panels. Shakhtar retains its orange background. The original Canva background-removal attempt required a paid plan.
+
+## Parent accounts and league roster
+
+`/league-register` provides two stages: English league documents and acknowledgements, then player details, optional media permissions and a confirmed team. `/parent` lets a parent sign in, view multiple children and change media/interview/public-statistics permissions. The original club and prospective-player interest forms remain separate.
+
+Accounts use asynchronously derived scrypt password hashes with unique salts, hashed recovery codes and HttpOnly/SameSite/Secure production cookies. Parent sessions last seven days and persist in SQLite; admin sessions remain separate. A private recovery code is displayed once at signup. Account recovery rotates that code and invalidates earlier sessions. Email verification and email reset delivery are not configured: the administrator must verify the guardian and club roster before approving registration. Do not ask parents to share passwords or recovery codes.
+
+The **League Roster** admin tab shows registrations, guardian details, signed document version and permission history. Confirm the guardian and team roster, then either create a zero-total statistics row or explicitly select an existing matching player. Statistics are linked by stable player ID, never automatically by a claimed name. A statistics row can belong to only one league profile. Update goals, assists and clean sheets in **Player Statistics**; the parent profile reads the same row and refreshes every 30 seconds while visible. Linked player identity fields cannot be changed through the statistics editor. Declined entries remain visible to their parent with the review note.
+
+New league profiles appear in the public statistics API only with the separate public-statistics permission. Guardian details, birth year and permissions never appear in that API. Permission changes are audited. Existing standalone statistics rows remain governed by the original administrator workflow.
+
+Teams initially come from the actual imported schedule (eight teams). Add confirmed teams, including new YFC teams, in **League Roster → Add a League Team**. Adding a team does not invent fixtures or modify the source schedule.
+
+`assets/league-policies.json` contains English registration editions of the three supplied documents and a separate media permission/participation acknowledgement. No liability release was supplied, so the media form does not purport to waive liability or guarantee insurance. The league stores the accepted document payload/hash/version, typed guardian name and timestamp. Change the version when changing policy text; prior snapshots remain in `league_policy_versions`. Financial and team-count figures in the translated regulations reflect the supplied document rather than being recalculated.
