@@ -97,7 +97,7 @@ const server=http.createServer(async(req,res)=>{
   // Explicit public allowlist: never serve source, credentials or the database directory.
   let file;
   if(path==='/'||path==='/index.html')file=join(root,'index.html');
-  else if(path==='/league-register'||path==='/league-register/')file=join(root,'league-register.html');
+  else if(['/registration-player','/registration-player/','/league-register','/league-register/'].includes(path))file=join(root,'league-register.html');
   else if(path==='/parent'||path==='/parent/')file=join(root,'parent.html');
   else if(path==='/admin'||path==='/admin/'||path==='/admin.html')file=join(root,'admin.html');
   else if(/^\/assets\/[a-zA-Z0-9_-]+\.(jpg|png|svg|css|js|json)$/.test(path)&&path!=='/assets/player-stats.json')file=join(root,path);
