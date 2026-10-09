@@ -8,6 +8,8 @@
 .section-intro,.hero p,.registration-intro p{font-size:1.0625rem;line-height:1.75}
 section:not(.light) .kicker{color:var(--yellow)}
 .links{font-size:.875rem;gap:16px}
+.links .pill,.links .pill:hover,.links .pill:focus-visible{color:var(--ink)}
+section:not(.light) .view-all{color:var(--yellow)}
 .kicker,.eyebrow,.member-info small,.club-count small{font-size:.875rem;letter-spacing:.08em}
 .club-link,.stats-note,.leader-heading small,.leader-player small,.stats-footer,.footer{font-size:.9375rem;line-height:1.6}
 .stats-empty p{font-size:1rem;line-height:1.7}
