@@ -60,6 +60,9 @@ document.querySelectorAll('[data-registration]').forEach(button=>button.addEvent
  for(const kind of ['club','player'])document.getElementById(kind+'-form').hidden=kind!==button.dataset.registration;
 }));
 const dateSelect=document.getElementById('schedule-date'),ageSelect=document.getElementById('schedule-age'),clubSelect=document.getElementById('schedule-club');let schedule=[];
+let requestedSchedule=null;
+function applyClubSchedule(){if(!requestedSchedule||!schedule.length)return;dateSelect.value='';ageSelect.value=requestedSchedule.ageGroup;clubSelect.value=[...clubSelect.options].find(o=>displayClub(o.value)===requestedSchedule.club)?.value||'';renderSchedule()}
+window.addEventListener('sjl-club-schedule',event=>{requestedSchedule=event.detail;applyClubSchedule()});
 function clubFor(name){return leagueClubs.find(c=>c.name===name||c.aliases.includes(name))}
 function displayClub(name){return clubFor(name)?.name||name}
 function dateLabel(date){return new Intl.DateTimeFormat('en-CA',{weekday:'long',month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(date+'T12:00:00Z'))}
@@ -80,5 +83,5 @@ function renderSchedule(){
 [dateSelect,ageSelect,clubSelect].forEach(select=>select.addEventListener('change',renderSchedule));
 fetch('assets/schedule.json').then(r=>{if(!r.ok)throw new Error();return r.json()}).then(data=>{
  schedule=data.matches;const dates=[...new Set(schedule.map(m=>m.date))].sort();dates.forEach(date=>option(dateSelect,date,dateLabel(date)));const names=[...new Set(schedule.flatMap(m=>[m.home,m.away]))].sort();names.forEach(name=>option(clubSelect,name,displayClub(name)));
- const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Winnipeg',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());dateSelect.value=dates.find(d=>d>=today)||'';renderSchedule();
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Winnipeg',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());dateSelect.value=dates.find(d=>d>=today)||'';if(requestedSchedule)applyClubSchedule();else renderSchedule();
 }).catch(()=>{document.getElementById('schedule-summary').textContent='Schedule temporarily unavailable. Please try again later.'});

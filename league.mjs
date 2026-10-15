@@ -16,16 +16,13 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
  CREATE TABLE IF NOT EXISTS league_consent_events(id TEXT PRIMARY KEY,entryId TEXT NOT NULL REFERENCES league_entries(id),parentId TEXT NOT NULL REFERENCES parent_accounts(id),consent TEXT NOT NULL,createdAt TEXT NOT NULL,policyVersion TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS league_policy_versions(version TEXT PRIMARY KEY,hash TEXT NOT NULL,payload TEXT NOT NULL);`);
  db.prepare('INSERT OR IGNORE INTO league_policy_versions VALUES(?,?,?)').run(policies.version,policiesHash,JSON.stringify(policies));
- if(!db.prepare("SELECT value FROM meta WHERE key='leagueTeamsSeeded'").get()){
-  const aliases={'Dynamo':'Dynamo Soccer Club','Birds':'Birds Academy','Green Strikers':'Green Strikers FC','YFC':'Youth Football Club'};
-  const schedule=JSON.parse(readFileSync(join(root,'assets/schedule.json'),'utf8'));
-  const insert=db.prepare('INSERT OR IGNORE INTO league_teams(id,club,ageGroup,name) VALUES(?,?,?,?)');
-  for(const m of schedule.matches)for(const name of [m.home,m.away]){const club=aliases[name]||name;insert.run(club.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+m.ageGroup.toLowerCase(),club,m.ageGroup,club+' '+m.ageGroup)}
-  db.prepare('INSERT INTO meta VALUES(?,?)').run('leagueTeamsSeeded','1');
- }
  const aliases={'Dynamo':'Dynamo Soccer Club','Birds':'Birds Academy','Green Strikers':'Green Strikers FC','YFC':'Youth Football Club'};
  const schedule=JSON.parse(readFileSync(join(root,'assets/schedule.json'),'utf8'));
  const canonical=name=>aliases[name]||name;
+ // Reconcile newly scheduled club/division pairs without duplicating existing or reactivating disabled teams.
+ const insertTeam=db.prepare('INSERT OR IGNORE INTO league_teams(id,club,ageGroup,name) SELECT ?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM league_teams WHERE club=? AND ageGroup=?)');
+ for(const m of schedule.matches)for(const name of [m.home,m.away]){const club=canonical(name);insertTeam.run(club.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'-'+m.ageGroup.toLowerCase(),club,m.ageGroup,club+' '+m.ageGroup,club,m.ageGroup)}
+ db.prepare('INSERT OR IGNORE INTO meta VALUES(?,?)').run('leagueTeamsSeeded','1');
  const columns=db.prepare('PRAGMA table_info(league_entries)').all().map(c=>c.name);
  if(!columns.includes('contactPhone'))db.exec("ALTER TABLE league_entries ADD COLUMN contactPhone TEXT NOT NULL DEFAULT '';");
  if(!columns.includes('clubContactConsent'))db.exec('ALTER TABLE league_entries ADD COLUMN clubContactConsent INTEGER NOT NULL DEFAULT 0;');
@@ -41,6 +38,13 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
  function profile(e){const team=db.prepare('SELECT * FROM league_teams WHERE id=?').get(e.teamId);const stats=e.statsPlayerId?db.prepare('SELECT * FROM players WHERE id=?').get(e.statsPlayerId):null;const matches=schedule.matches.filter(m=>m.ageGroup===team.ageGroup&&(canonical(m.home)===team.club||canonical(m.away)===team.club));return{...e,consent:JSON.parse(e.consent),team,stats,schedule:{season:schedule.season,timezone:schedule.timezone,matches}}}
  function transaction(fn){db.exec('BEGIN IMMEDIATE');try{const result=fn();db.exec('COMMIT');return result}catch(error){db.exec('ROLLBACK');throw error}}
  async function handle(req,res,path,isAdmin){
+  if(path==='/api/league/rosters'&&req.method==='GET'){
+   const roster=teams().map(t=>({id:t.id,club:t.club,ageGroup:t.ageGroup,name:t.name,players:[]}));
+   const byTeam=new Map(roster.map(t=>[t.id,t]));
+   const approved=db.prepare("SELECT e.teamId,e.consent,p.name,p.goals,p.assists,p.cleanSheets FROM league_entries e JOIN players p ON p.id=e.statsPlayerId JOIN league_teams t ON t.id=e.teamId WHERE e.status='approved' AND t.active=1 ORDER BY p.name COLLATE NOCASE").all();
+   for(const row of approved)if(JSON.parse(row.consent).publicStats===true)byTeam.get(row.teamId)?.players.push({name:row.name,goals:row.goals,assists:row.assists,cleanSheets:row.cleanSheets});
+   json(res,200,{season:schedule.season,teams:roster});return true;
+  }
   if(path==='/api/league/teams'&&req.method==='GET'){json(res,200,{teams:teams(),policyVersion:policies.version});return true}
   if(path==='/api/parent/signup'&&req.method==='POST'){
    rate(req,'parent-signup',20,60*60*1000);const b=await body(req),{address,password}=credentials(b);if(b.guardian!==true)throw new InputError('Confirm that you are a parent or legal guardian.');const name=text(b.name,'Guardian name');

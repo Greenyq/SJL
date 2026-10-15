@@ -81,3 +81,11 @@ The SQLite outbox is written atomically with registration and survives restart. 
 Each new registration also queues a separate parent receipt to the signed-in account email, with player/team details, permission choices and a clear pending-review status. Parent and club notifications have independent recipients, retry keys and delivery statuses; admin displays both. Changing a club recipient never redirects parent receipts. The schema migration preserves existing club messages and their provider/idempotency identifiers without adding retroactive parent messages.
 
 Shareable league player registration URL: `https://superjuniorleague.ca/registration-player`. The `/league-register` route remains a compatible alias.
+
+### Club rosters and review filters
+
+The **League Roster** admin view opens with **Awaiting approval** selected. Filter by club, U10/U13, status and player/guardian name. Filters remain selected after reviews and refreshes; **Reset filters** clears club/age/search and returns to pending applications. Email configuration is in a collapsible panel below the applications.
+
+Click any member-club card on the homepage to open its roster and season statistics, with U10/U13 tabs and a link to that club's schedule. Prairie Sky's external website remains available through a separate link. `/api/league/rosters` returns only approved registrations on active teams with public-statistics permission, using an explicit allowlist of name and season totals. Pending, declined, nonconsenting and unlinked statistics-only records are excluded. No parent details, birth year, signature or permission history are sent to public pages. Withdrawal hides the player on the next roster request.
+
+On startup, newly scheduled club/age pairs are added to registration without duplicating existing teams or reactivating disabled teams. Existing registrations, accounts and statistics remain intact.
