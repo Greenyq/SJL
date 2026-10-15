@@ -22,9 +22,9 @@ The **Registrations** tab displays club and player applications and their contac
 
 ## Schedule
 
-`assets/schedule.json` contains the Schedule sheet from `Super_Junior_League_Schedule_and_Costs(1).xlsx`: 14 dates, 42 matches, October 25, 2026 through January 31, 2027, 19:30–20:30 Winnipeg time, two U10 fields and one U13 field. The source does **not** include YFC fixtures. The website retains that schedule exactly and offers matchday, age and club filters. Club names in the UI are normalized to the member-club names, but fixtures retain their original source labels.
+`assets/schedule.json` contains 14 dates and 42 matches, October 25, 2026 through January 31, 2027, 19:30–20:30 Winnipeg time, two U10 fields and one U13 field. The original workbook omitted YFC; the corrected fixtures include YFC in both divisions. U10 has six teams playing 9–10 games each, with every pairing occurring once or twice. U13 has four teams playing seven games each, with every pairing occurring two or three times. Shakhtar U13 rests on October 25. Dates, times and field capacity are unchanged. Home/away totals differ by at most one per team, no team plays twice on a matchday, and no team has three consecutive byes. Club names in the UI are normalized to the member-club names; fixtures retain source aliases (including YFC).
 
-To import a replacement workbook, run `python scripts/import-schedule.py /absolute/path/to/schedule.xlsx` from the repository root and review the resulting JSON. The importer expects the Schedule sheet first and the supplied Date/Time/U10 Field 1/U10 Field 2/U13 Field 3 layout.
+To import a replacement workbook, run `python scripts/import-schedule.py /absolute/path/to/schedule.xlsx` from the repository root and review the resulting JSON. A workbook import replaces the corrected fixtures, so verify division membership and run `npm test` before publishing. The importer expects the Schedule sheet first and the supplied Date/Time/U10 Field 1/U10 Field 2/U13 Field 3 layout.
 
 ## Render deployment
 

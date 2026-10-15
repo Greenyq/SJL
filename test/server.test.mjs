@@ -21,11 +21,42 @@ async function request(path,method='GET',data,authenticated=false,extraHeaders={
 async function login(){const{response}=await request('/api/admin/login','POST',{password});assert.equal(response.status,200);cookie=response.headers.get('set-cookie').split(';')[0];assert.match(response.headers.get('set-cookie'),/HttpOnly/);assert.match(response.headers.get('set-cookie'),/SameSite=Strict/)}
 before(async()=>{dir=await mkdtemp(join(tmpdir(),'sjl-test-'));await start()});
 after(async()=>{await stop();await rm(dir,{recursive:true,force:true})});
-test('serves home/admin and exact imported schedule; keeps internal files private',async()=>{
+test('serves home/admin and corrected league schedule; keeps internal files private',async()=>{
  const home=await fetch(base+'/');assert.equal(home.status,200);const html=await home.text();assert.match(html,/REGISTER A CLUB/);assert.match(html,/REGISTER A PLAYER/);assert.match(html,/assets\/site.js/);assert.doesNotMatch(html,/NORTH STARS|LEAGUE TABLE/);
  assert.equal((await fetch(base+'/admin')).status,200);
- const schedule=await(await fetch(base+'/assets/schedule.json')).json();assert.equal(schedule.matches.length,42);assert.equal(new Set(schedule.matches.map(m=>m.date)).size,14);assert.equal(schedule.matches[0].date,'2026-10-25');assert.equal(schedule.matches.at(-1).date,'2027-01-31');assert.equal(schedule.matches.filter(m=>m.ageGroup==='U10').length,28);assert.equal(schedule.matches.filter(m=>m.ageGroup==='U13').length,14);assert.equal(schedule.matches.some(m=>m.home==='YFC'||m.away==='YFC'),false);
+ const schedule=await(await fetch(base+'/assets/schedule.json')).json();assert.equal(schedule.matches.length,42);assert.equal(new Set(schedule.matches.map(m=>m.date)).size,14);assert.equal(schedule.matches[0].date,'2026-10-25');assert.equal(schedule.matches.at(-1).date,'2027-01-31');assert.equal(schedule.matches.filter(m=>m.ageGroup==='U10').length,28);assert.equal(schedule.matches.filter(m=>m.ageGroup==='U13').length,14);assert.equal(schedule.matches.filter(m=>m.home==='YFC'||m.away==='YFC').length,16);
  for(const path of ['/server.mjs','/package.json','/.env','/.data/sjl.sqlite','/assets/player-stats.json','/assets/../server.mjs'])assert.equal((await fetch(base+path)).status,404,path);
+});
+test('schedule includes every division team fairly with no field or team conflicts',async()=>{
+ const {matches}=await(await fetch(base+'/assets/schedule.json')).json();
+ const divisions={U10:['Prairie Sky FC','Dynamo','Birds','Green Strikers','Shakhtar Academy Winnipeg','YFC'],U13:['Prairie Sky FC','Green Strikers','Shakhtar Academy Winnipeg','YFC']};
+ const dates=[...new Set(matches.map(m=>m.date))].sort();
+ assert.equal(new Set(matches.map(m=>m.id)).size,matches.length);
+ for(const date of dates){
+  const day=matches.filter(m=>m.date===date);
+  assert.deepEqual(day.map(m=>m.field).sort(),[1,2,3]);
+  assert.ok(day.every(m=>m.start==='19:30'&&m.end==='20:30'));
+  for(const age of Object.keys(divisions)){
+   const teams=day.filter(m=>m.ageGroup===age).flatMap(m=>[m.home,m.away]);
+   assert.equal(new Set(teams).size,teams.length,`${date} ${age}: duplicate team`);
+  }
+ }
+ for(const [age,teams] of Object.entries(divisions)){
+  const games=matches.filter(m=>m.ageGroup===age);
+  assert.deepEqual([...new Set(games.flatMap(m=>[m.home,m.away]))].sort(),[...teams].sort());
+  for(const team of teams){
+   const played=games.filter(m=>m.home===team||m.away===team);
+   assert.ok(age==='U10'?[9,10].includes(played.length):played.length===7,`${age} ${team}: game count`);
+   assert.ok(Math.abs(played.filter(m=>m.home===team).length-played.filter(m=>m.away===team).length)<=1);
+   for(let i=0;i<dates.length-2;i++)assert.ok(played.some(m=>dates.slice(i,i+3).includes(m.date)),`${age} ${team}: three consecutive byes`);
+   for(const opponent of teams.filter(t=>t!==team)){
+    const count=played.filter(m=>m.home===opponent||m.away===opponent).length;
+    assert.ok(age==='U10'?[1,2].includes(count):[2,3].includes(count),`${age} ${team} vs ${opponent}: pair count`);
+   }
+  }
+ }
+ const opening=matches.filter(m=>m.date===dates[0]&&m.ageGroup==='U13');
+ assert.ok(opening.every(m=>m.home!=='Shakhtar Academy Winnipeg'&&m.away!=='Shakhtar Academy Winnipeg'));
 });
 test('rejects unauthorized admin access and cross-origin mutations',async()=>{
  assert.equal((await request('/api/admin/players')).response.status,401);
