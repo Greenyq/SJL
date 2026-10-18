@@ -1,7 +1,7 @@
 {
   "season": "2026/27",
   "timezone": "America/Winnipeg",
-  "source": "Corrected league fixtures: YFC in U10 and U13; Shakhtar U13 bye on opening matchday",
+  "source": "Corrected league fixtures: YFC in U10 and U13; Shakhtar U13 bye on opening matchday; Prairie Sky U13 plays alternate matchdays from October 25",
   "matches": [
     {
       "id": "2026-10-25-1",
@@ -90,8 +90,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "Green Strikers",
-      "away": "YFC"
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
     },
     {
       "id": "2026-11-15-1",
@@ -120,8 +120,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "Prairie Sky FC",
-      "away": "Shakhtar Academy Winnipeg"
+      "home": "Green Strikers",
+      "away": "YFC"
     },
     {
       "id": "2026-11-22-1",
@@ -150,8 +150,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "Shakhtar Academy Winnipeg",
-      "away": "YFC"
+      "home": "Green Strikers",
+      "away": "Prairie Sky FC"
     },
     {
       "id": "2026-11-29-1",
@@ -180,8 +180,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "Green Strikers",
-      "away": "Prairie Sky FC"
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "YFC"
     },
     {
       "id": "2026-12-06-1",
@@ -211,7 +211,7 @@
       "ageGroup": "U13",
       "field": 3,
       "home": "YFC",
-      "away": "Shakhtar Academy Winnipeg"
+      "away": "Prairie Sky FC"
     },
     {
       "id": "2026-12-13-1",
@@ -270,8 +270,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "YFC",
-      "away": "Prairie Sky FC"
+      "home": "Prairie Sky FC",
+      "away": "Shakhtar Academy Winnipeg"
     },
     {
       "id": "2027-01-03-1",
@@ -300,8 +300,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "Prairie Sky FC",
-      "away": "Shakhtar Academy Winnipeg"
+      "home": "YFC",
+      "away": "Green Strikers"
     },
     {
       "id": "2027-01-10-1",
@@ -330,8 +330,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "YFC",
-      "away": "Green Strikers"
+      "home": "Green Strikers",
+      "away": "Prairie Sky FC"
     },
     {
       "id": "2027-01-17-1",
@@ -360,8 +360,8 @@
       "end": "20:30",
       "ageGroup": "U13",
       "field": 3,
-      "home": "Green Strikers",
-      "away": "Prairie Sky FC"
+      "home": "YFC",
+      "away": "Shakhtar Academy Winnipeg"
     },
     {
       "id": "2027-01-24-1",
