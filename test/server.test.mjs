@@ -48,13 +48,19 @@ test('schedule includes every division team fairly with no field or team conflic
    const played=games.filter(m=>m.home===team||m.away===team);
    assert.ok(age==='U10'?[9,10].includes(played.length):played.length===7,`${age} ${team}: game count`);
    assert.ok(Math.abs(played.filter(m=>m.home===team).length-played.filter(m=>m.away===team).length)<=1);
-   for(let i=0;i<dates.length-2;i++)assert.ok(played.some(m=>dates.slice(i,i+3).includes(m.date)),`${age} ${team}: three consecutive byes`);
+   for(let i=0;i<dates.length-2;i++){
+    // Requested Birds fixture swap moves Prairie Sky's Jan 3 game to Oct 25.
+    const openingSwapBye=age==='U10'&&team==='Prairie Sky FC'&&dates[i]==='2026-12-20';
+    if(!openingSwapBye)assert.ok(played.some(m=>dates.slice(i,i+3).includes(m.date)),`${age} ${team}: three consecutive byes`);
+   }
    for(const opponent of teams.filter(t=>t!==team)){
     const count=played.filter(m=>m.home===opponent||m.away===opponent).length;
     assert.ok(age==='U10'?[1,2].includes(count):[2,3].includes(count),`${age} ${team} vs ${opponent}: pair count`);
    }
   }
  }
+ assert.equal(matches.find(m=>m.id==='2026-10-25-1').home,'Prairie Sky FC');
+ assert.equal(matches.find(m=>m.id==='2027-01-03-1').away,'Dynamo');
  const opening=matches.filter(m=>m.date===dates[0]&&m.ageGroup==='U13');
  assert.ok(opening.every(m=>m.home!=='Shakhtar Academy Winnipeg'&&m.away!=='Shakhtar Academy Winnipeg'));
 });
