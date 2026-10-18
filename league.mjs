@@ -1,4 +1,4 @@
-import { applyRosterCorrections } from './roster-corrections.mjs';
+import { applyRosterCorrections, applyOrganizerRosterCorrection } from './roster-corrections.mjs';
 import { randomBytes, randomUUID, scrypt, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { readFileSync } from 'node:fs';
@@ -28,6 +28,7 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
  if(!columns.includes('contactPhone'))db.exec("ALTER TABLE league_entries ADD COLUMN contactPhone TEXT NOT NULL DEFAULT '';");
  if(!columns.includes('clubContactConsent'))db.exec('ALTER TABLE league_entries ADD COLUMN clubContactConsent INTEGER NOT NULL DEFAULT 0;');
  applyRosterCorrections(db);
+ applyOrganizerRosterCorrection(db,process.env.SJL_ROSTER_CORRECTION?JSON.parse(process.env.SJL_ROSTER_CORRECTION):null);
  const mail=setupClubMail({db,clubs,InputError,email});
  const teams=()=>db.prepare('SELECT * FROM league_teams WHERE active=1 ORDER BY club,name').all();
  function parent(req){const token=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith('sjl_parent='))?.slice(11);if(!token)return null;return db.prepare('SELECT a.id,a.email,a.name,s.tokenHash FROM parent_sessions s JOIN parent_accounts a ON a.id=s.parentId WHERE s.tokenHash=? AND s.expires>?').get(hash(token),Date.now())||null}

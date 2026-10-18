@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 // Organizer-requested correction, 2026-10-18. Match the verified stable player
 // ID so no other registration with a similar name can be moved.
 export function applyRosterCorrections(db) {
@@ -14,6 +15,30 @@ export function applyRosterCorrections(db) {
   db.prepare('UPDATE league_entries SET teamId=? WHERE id=?').run(targets[0].id,entries[0].id);
   db.prepare("UPDATE players SET ageGroup='U13',version=version+1 WHERE id=?").run(id);
   db.prepare('INSERT INTO meta(key,value) VALUES(?,?)').run(key,JSON.stringify({entryId:entries[0].id,playerId:id,from:player.ageGroup,to:'U13',appliedAt:new Date().toISOString()}));
+  db.exec('COMMIT');
+ }catch(error){db.exec('ROLLBACK');throw error}
+}
+
+// One-time, organizer-authorized transfers are supplied privately in the
+// service environment; registration and guardian details stay out of Git.
+export function applyOrganizerRosterCorrection(db, correction) {
+ if(!correction)return;
+ const {key,firstName,lastName,birthYear,guardianName,sourceClub,sourceAgeGroup,targetClub,targetAgeGroup}=correction;
+ if(![key,firstName,lastName,guardianName,sourceClub,sourceAgeGroup,targetClub,targetAgeGroup].every(v=>typeof v==='string'&&v.trim())||!Number.isInteger(birthYear)||!['U10','U13'].includes(targetAgeGroup))throw new Error('Invalid organizer roster correction.');
+ const marker='organizer-roster:'+key;
+ if(db.prepare('SELECT value FROM meta WHERE key=?').get(marker))return;
+ db.exec('BEGIN IMMEDIATE');
+ try {
+  const entries=db.prepare(`SELECT e.*,t.club,t.ageGroup FROM league_entries e JOIN league_teams t ON t.id=e.teamId JOIN parent_accounts a ON a.id=e.parentId WHERE lower(e.firstName)=lower(?) AND lower(e.lastName)=lower(?) AND e.birthYear=? AND lower(a.name)=lower(?) AND t.club=? AND t.ageGroup=?`).all(firstName,lastName,birthYear,guardianName,sourceClub,sourceAgeGroup);
+  const teams=db.prepare('SELECT * FROM league_teams WHERE club=? AND ageGroup=? AND active=1').all(targetClub,targetAgeGroup);
+  if(entries.length!==1||teams.length!==1||!['pending','rejected'].includes(entries[0].status))throw new Error('Organizer roster correction needs a unique unapproved registration and active destination.');
+  const entry=entries[0],team=teams[0],name=entry.firstName+' '+entry.lastName;
+  if(entry.statsPlayerId)throw new Error('Unapproved registration unexpectedly has linked statistics.');
+  if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=?').get(name,team.club,team.ageGroup))throw new Error('Destination statistics record requires manual verification.');
+  const statsId=randomUUID(),now=new Date().toISOString();
+  db.prepare('INSERT INTO players VALUES(?,?,?,?,?,?,?,1)').run(statsId,name,team.club,team.ageGroup,0,0,0);
+  db.prepare("UPDATE league_entries SET teamId=?,status='approved',statsPlayerId=?,reviewNote=?,reviewedAt=? WHERE id=?").run(team.id,statsId,'Registration corrected and approved by the organizer. '+team.name+'.',now,entry.id);
+  db.prepare('INSERT INTO meta(key,value) VALUES(?,?)').run(marker,JSON.stringify({entryId:entry.id,fromTeamId:entry.teamId,toTeamId:team.id,previousStatus:entry.status,previousReviewNote:entry.reviewNote,previousReviewedAt:entry.reviewedAt,statsPlayerId:statsId,appliedAt:now}));
   db.exec('COMMIT');
  }catch(error){db.exec('ROLLBACK');throw error}
 }
