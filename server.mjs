@@ -41,7 +41,7 @@ function session(req){const value=req.headers.cookie?.split(';').map(s=>s.trim()
 function requireAdmin(req){if(!session(req))throw new InputError('Sign in as administrator.',401)}
 async function body(req){if(!req.headers['content-type']?.startsWith('application/json'))throw new InputError('JSON content is required.',415);let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>16384)throw new InputError('Request is too large.',413);chunks.push(chunk)}try{const value=JSON.parse(Buffer.concat(chunks).toString());if(!value||typeof value!=='object'||Array.isArray(value))throw Error();return value}catch{throw new InputError('Invalid JSON request.')}}
 function validateStats(p){if(!clubs.includes(p.club))throw new InputError('Choose a league club.');if(!['U10','U13'].includes(p.ageGroup))throw new InputError('Choose U10 or U13.');return{name:text(p.name,'Player name'),club:p.club,ageGroup:p.ageGroup,goals:integer(p.goals,'Goals',0,10000),assists:integer(p.assists,'Assists',0,10000),cleanSheets:integer(p.cleanSheets,'Clean sheets',0,1000)}}
-const allPlayers=()=>db.prepare('SELECT * FROM players ORDER BY name COLLATE NOCASE').all();
+const allPlayers=()=>db.prepare("SELECT * FROM players WHERE id NOT IN (SELECT statsPlayerId FROM league_entries WHERE status='archived' AND statsPlayerId IS NOT NULL) ORDER BY name COLLATE NOCASE").all();
 const league=setupLeague({db,root,clubs,InputError,json,text,integer,email,rate,body,cookieSecure});
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Content-Security-Policy',csp);
