@@ -40,6 +40,7 @@ if(!db.prepare("SELECT value FROM meta WHERE key='legacyRegistrationCleanup20261
   db.exec('COMMIT');
  }catch(error){db.exec('ROLLBACK');throw error}
 }
+console.log('Legacy registration cleanup: '+db.prepare('SELECT COUNT(*) n FROM registration_archives').get().n+' archived; '+db.prepare('SELECT COUNT(*) n FROM registrations WHERE id NOT IN (SELECT registrationId FROM registration_archives)').get().n+' active applications.');
 const sessions=new Map(),limits=new Map();
 const password=process.env.ADMIN_PASSWORD||'';
 const salt=randomBytes(16),passwordHash=scryptSync(password,salt,64);
