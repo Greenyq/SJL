@@ -17,12 +17,28 @@ const db=new DatabaseSync(join(dataDir,'sjl.sqlite'));
 db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
 CREATE TABLE IF NOT EXISTS players(id TEXT PRIMARY KEY,name TEXT NOT NULL,club TEXT NOT NULL,ageGroup TEXT NOT NULL,goals INTEGER NOT NULL,assists INTEGER NOT NULL,cleanSheets INTEGER NOT NULL,version INTEGER NOT NULL DEFAULT 1);
 CREATE TABLE IF NOT EXISTS registrations(id TEXT PRIMARY KEY,kind TEXT NOT NULL,payload TEXT NOT NULL,createdAt TEXT NOT NULL);
+
+CREATE TABLE IF NOT EXISTS registration_archives(registrationId TEXT PRIMARY KEY REFERENCES registrations(id),archivedAt TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);`);
 if(!db.prepare("SELECT value FROM meta WHERE key='seeded'").get()){
  const seed=JSON.parse(readFileSync(join(root,'assets/player-stats.json'),'utf8'));
  const insert=db.prepare('INSERT INTO players VALUES(?,?,?,?,?,?,?,1)');
  db.exec('BEGIN');
  try{for(const p of seed.players||[])insert.run(randomUUID(),p.name,p.club,p.ageGroup,p.goals||0,p.assists||0,p.cleanSheets||0);db.prepare('INSERT INTO meta VALUES(?,?)').run('seeded','1');db.exec('COMMIT')}catch(e){db.exec('ROLLBACK');throw e}
+}
+// One-time organizer-requested cleanup of the six reviewed legacy applications.
+if(!db.prepare("SELECT value FROM meta WHERE key='legacyRegistrationCleanup20261019'").get()){
+ const targets=[['bf21266b','Shakhtar'],['eddcaf18','Serhii YASHCHYSHYN'],['ad04dce3','Academy Shakhtar'],['15a5eb97','Academy Shakhtar'],['1e9197c2','Academy Shakhtar'],['8c842316','Oleksii Fedoruk']];
+ db.exec('BEGIN IMMEDIATE');
+ try{
+  const archive=db.prepare('INSERT OR IGNORE INTO registration_archives VALUES(?,?)');
+  for(const [prefix,name] of targets){
+   const rows=db.prepare("SELECT id,payload FROM registrations WHERE lower(substr(id,1,8))=?").all(prefix);
+   if(rows.length===1&&JSON.parse(rows[0].payload).name===name)archive.run(rows[0].id,new Date().toISOString());
+  }
+  db.prepare('INSERT INTO meta VALUES(?,?)').run('legacyRegistrationCleanup20261019','1');
+  db.exec('COMMIT');
+ }catch(error){db.exec('ROLLBACK');throw error}
 }
 const sessions=new Map(),limits=new Map();
 const password=process.env.ADMIN_PASSWORD||'';
@@ -78,7 +94,15 @@ const server=http.createServer(async(req,res)=>{
    requireAdmin(req);
    if(path==='/api/admin/session'&&req.method==='GET')return json(res,200,{ok:true});
    if(path==='/api/admin/logout'&&req.method==='POST'){const s=session(req);sessions.delete(s.key);res.setHeader('Set-Cookie',`sjl_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${cookieSecure?'; Secure':''}`);return json(res,200,{ok:true})}
-   if(path==='/api/admin/registrations'&&req.method==='GET')return json(res,200,{registrations:db.prepare('SELECT * FROM registrations ORDER BY createdAt DESC').all().map(r=>({...r,payload:JSON.parse(r.payload)}))});
+   if(path==='/api/admin/registrations'&&req.method==='GET')return json(res,200,{registrations:db.prepare('SELECT r.*,a.archivedAt FROM registrations r LEFT JOIN registration_archives a ON a.registrationId=r.id WHERE '+(new URL(req.url,'http://localhost').searchParams.get('archived')==='true'?'a.registrationId IS NOT NULL':'a.registrationId IS NULL')+' ORDER BY r.createdAt DESC').all().map(r=>({...r,payload:JSON.parse(r.payload)}))});
+   if(/^\/api\/admin\/registrations\/[^/]+\/archive$/.test(path)&&req.method==='PUT'){
+    const id=path.split('/')[4],b=await body(req);
+    if(typeof b.archived!=='boolean')throw new InputError('Choose archive or restore.');
+    if(!db.prepare('SELECT id FROM registrations WHERE id=?').get(id))throw new InputError('Registration not found.',404);
+    if(b.archived)db.prepare('INSERT OR IGNORE INTO registration_archives VALUES(?,?)').run(id,new Date().toISOString());
+    else db.prepare('DELETE FROM registration_archives WHERE registrationId=?').run(id);
+    return json(res,200,{ok:true});
+   }
    if(path==='/api/admin/players'&&req.method==='GET')return json(res,200,{players:allPlayers()});
    if(path==='/api/admin/players'&&req.method==='POST'){
     const b=await body(req),p=validateStats(b),id=randomUUID();
