@@ -40,6 +40,25 @@ test('public club rosters include only approved consenting players and immediate
  assert.equal((await api('/api/parent/players/'+id+'/consent','PUT',{policyVersion,publicStats:false,media:false,interviews:false},parentB)).response.status,200);
  assert.deepEqual((await publicTeam()).players,[]);
 });
+test('admin corrects names across profiles and totals; archival is private and reversible with consent intact',async()=>{
+ const path='/api/admin/league-entries/'+entryId+'/edit';
+ const rename={action:'rename',expectedName:'Test Junior',expectedStatus:'approved',firstName:'Corrected',lastName:'Junior'};
+ assert.equal((await api(path,'POST',rename,parentA)).response.status,401);
+ assert.equal((await api(path,'POST',rename,admin)).response.status,200);
+ let profile=(await api('/api/parent/players','GET',undefined,parentA)).data.players.find(p=>p.id===entryId);
+ assert.equal(profile.firstName,'Corrected');assert.equal(profile.stats.name,'Corrected Junior');assert.equal(profile.stats.goals,9);
+ assert.equal((await api(path,'POST',rename,admin)).response.status,409);
+ const request={action:'archive',expectedName:'Corrected Junior',expectedStatus:'approved'};
+ assert.equal((await api(path,'POST',request,admin)).response.status,200);
+ assert.equal((await api('/api/parent/players','GET',undefined,parentA)).data.players.some(p=>p.id===entryId),false);
+ assert.equal((await api('/api/admin/players','GET',undefined,admin)).data.players.some(p=>p.id===statsId),false);
+ assert.equal((await api('/api/admin/league-entries','GET',undefined,admin)).data.entries.find(p=>p.id===entryId).status,'archived');
+ assert.equal((await api(path,'POST',{...request,action:'restore',expectedStatus:'archived'},admin)).response.status,200);
+ profile=(await api('/api/parent/players','GET',undefined,parentA)).data.players.find(p=>p.id===entryId);
+ assert.equal(profile.status,'approved');assert.equal(profile.stats.goals,9);assert.equal(profile.consent.publicStats,false);
+ assert.equal((await api(path,'POST',{...rename,expectedName:'Corrected Junior',firstName:'Test'},admin)).response.status,200);
+ const db=new DatabaseSync(join(dir,'sjl.sqlite'));assert.equal(db.prepare('SELECT count(*) n FROM league_entry_edits WHERE entryId=?').get(entryId).n,4);db.close();
+});
 test('parent sessions, profiles and permission history survive restart; recovery rotates code and invalidates sessions',async()=>{await stop();await start();assert.equal((await api('/api/parent/players','GET',undefined,parentA)).data.players.length,2);assert.equal((await api('/api/admin/session','GET',undefined,admin)).response.status,401);assert.equal((await api('/api/parent/recover','POST',{email:'guardian-a@example.test',password:parentPassword,recoveryCode:'incorrect-code'})).response.status,401);const r=await api('/api/parent/recover','POST',{email:'guardian-a@example.test',password:parentPassword,recoveryCode:recovery});assert.equal(r.response.status,200);assert.notEqual(r.data.recoveryCode,recovery);assert.equal((await api('/api/parent/players','GET',undefined,parentA)).response.status,401);assert.equal((await api('/api/parent/recover','POST',{email:'guardian-a@example.test',password:parentPassword,recoveryCode:recovery})).response.status,401);parentA=extractCookie(r.response);assert.equal((await api('/api/parent/players','GET',undefined,parentA)).data.players[0].stats.goals,0);assert.equal((await api('/api/parent/logout','POST',{},parentA)).response.status,200);assert.equal((await api('/api/parent/session','GET',undefined,parentA)).response.status,401)});
 
 test('startup adds newly scheduled teams to an existing database without reactivating disabled teams',async()=>{

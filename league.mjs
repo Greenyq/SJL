@@ -15,6 +15,8 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
  CREATE TABLE IF NOT EXISTS league_teams(id TEXT PRIMARY KEY,club TEXT NOT NULL,ageGroup TEXT NOT NULL,name TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 1,UNIQUE(club,ageGroup,name));
  CREATE TABLE IF NOT EXISTS league_entries(id TEXT PRIMARY KEY,parentId TEXT NOT NULL REFERENCES parent_accounts(id),firstName TEXT NOT NULL,lastName TEXT NOT NULL,birthYear INTEGER NOT NULL,teamId TEXT NOT NULL REFERENCES league_teams(id),status TEXT NOT NULL DEFAULT 'pending',statsPlayerId TEXT UNIQUE REFERENCES players(id),consent TEXT NOT NULL,signedBy TEXT NOT NULL,signedAt TEXT NOT NULL,policyVersion TEXT NOT NULL,policyHash TEXT NOT NULL,reviewNote TEXT NOT NULL DEFAULT '',reviewedAt TEXT);
  CREATE TABLE IF NOT EXISTS league_consent_events(id TEXT PRIMARY KEY,entryId TEXT NOT NULL REFERENCES league_entries(id),parentId TEXT NOT NULL REFERENCES parent_accounts(id),consent TEXT NOT NULL,createdAt TEXT NOT NULL,policyVersion TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS league_entry_edits(id TEXT PRIMARY KEY,entryId TEXT NOT NULL REFERENCES league_entries(id),action TEXT NOT NULL,previous TEXT NOT NULL,createdAt TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS league_entry_archives(entryId TEXT PRIMARY KEY REFERENCES league_entries(id),previousStatus TEXT NOT NULL);
  CREATE TABLE IF NOT EXISTS league_policy_versions(version TEXT PRIMARY KEY,hash TEXT NOT NULL,payload TEXT NOT NULL);`);
  db.prepare('INSERT OR IGNORE INTO league_policy_versions VALUES(?,?,?)').run(policies.version,policiesHash,JSON.stringify(policies));
  const aliases={'Dynamo':'Dynamo Soccer Club','Birds':'Birds Academy','Green Strikers':'Green Strikers FC','YFC':'Youth Football Club'};
@@ -72,7 +74,7 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
    const account=requireParent(req);
    if(path==='/api/parent/session'&&req.method==='GET'){json(res,200,{account:{id:account.id,name:account.name,email:account.email}});return true}
    if(path==='/api/parent/logout'&&req.method==='POST'){db.prepare('DELETE FROM parent_sessions WHERE tokenHash=?').run(account.tokenHash);cookie(res,'',0);json(res,200,{ok:true});return true}
-   if(path==='/api/parent/players'&&req.method==='GET'){json(res,200,{players:db.prepare('SELECT * FROM league_entries WHERE parentId=? ORDER BY signedAt DESC').all(account.id).map(profile)});return true}
+   if(path==='/api/parent/players'&&req.method==='GET'){json(res,200,{players:db.prepare("SELECT * FROM league_entries WHERE parentId=? AND status<>'archived' ORDER BY signedAt DESC").all(account.id).map(profile)});return true}
    if(path==='/api/parent/players'&&req.method==='POST'){
     rate(req,'league-register',30,60*60*1000);const b=await body(req);if(b.website)throw new InputError('Unable to submit registration.');
     if(b.policyVersion!==policies.version)throw new InputError('The documents have changed. Reload and review the current version.',409);
@@ -104,6 +106,33 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
    if(path==='/api/admin/league-entries'&&req.method==='GET'){
     json(res,200,{entries:db.prepare('SELECT * FROM league_entries ORDER BY signedAt DESC').all().map(e=>({...profile(e),notification:mail.forEntry(e.id),parentNotification:mail.forEntry(e.id,'parent'),parent:db.prepare('SELECT name,email FROM parent_accounts WHERE id=?').get(e.parentId),consentHistory:db.prepare('SELECT consent,createdAt,policyVersion FROM league_consent_events WHERE entryId=? ORDER BY createdAt').all(e.id).map(v=>({...v,consent:JSON.parse(v.consent)}))}))});return true;
    }
+   if(/^\/api\/admin\/league-entries\/[^/]+\/edit$/.test(path)&&req.method==='POST'){
+    const id=path.split('/')[4],b=await body(req);
+    transaction(()=>{
+     const entry=db.prepare('SELECT * FROM league_entries WHERE id=?').get(id);
+     if(!entry)throw new InputError('Registration not found.',404);
+     if(b.expectedName!==entry.firstName+' '+entry.lastName||b.expectedStatus!==entry.status)throw new InputError('Registration changed. Refresh before editing.',409);
+     if(b.action==='rename'){
+      if(entry.status==='archived')throw new InputError('Restore this registration before editing.',409);
+      const firstName=text(b.firstName,'First name',60),lastName=text(b.lastName,'Last name',60),name=firstName+' '+lastName;
+      if(db.prepare('SELECT id FROM league_entries WHERE parentId=? AND lower(firstName)=lower(?) AND lower(lastName)=lower(?) AND birthYear=? AND id<>?').get(entry.parentId,firstName,lastName,entry.birthYear,id))throw new InputError('This parent already has a registration with that name.',409);
+      const team=getTeam(entry.teamId);
+      if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=? AND id<>?').get(name,team.club,team.ageGroup,entry.statsPlayerId||''))throw new InputError('A statistics record with that name already exists.',409);
+      db.prepare('UPDATE league_entries SET firstName=?,lastName=? WHERE id=?').run(firstName,lastName,id);
+      if(entry.statsPlayerId)db.prepare('UPDATE players SET name=?,version=version+1 WHERE id=?').run(name,entry.statsPlayerId);
+     }else if(b.action==='archive'){
+      if(entry.status==='archived')throw new InputError('Registration is already archived.',409);
+      db.prepare('INSERT INTO league_entry_archives VALUES(?,?)').run(id,entry.status);
+      db.prepare("UPDATE league_entries SET status='archived' WHERE id=?").run(id);
+     }else if(b.action==='restore'){
+      const archive=db.prepare('SELECT * FROM league_entry_archives WHERE entryId=?').get(id);
+      if(entry.status!=='archived'||!archive)throw new InputError('Registration is not archived.',409);
+      db.prepare('UPDATE league_entries SET status=? WHERE id=?').run(archive.previousStatus,id);
+      db.prepare('DELETE FROM league_entry_archives WHERE entryId=?').run(id);
+     }else throw new InputError('Choose rename, archive or restore.');
+     db.prepare('INSERT INTO league_entry_edits VALUES(?,?,?,?,?)').run(randomUUID(),id,b.action,JSON.stringify({firstName:entry.firstName,lastName:entry.lastName,status:entry.status}),new Date().toISOString());
+    });json(res,200,{ok:true});return true;
+   }
    if(/^\/api\/admin\/league-entries\/[^/]+\/review$/.test(path)&&req.method==='POST'){
     const id=path.split('/')[4],b=await body(req),entry=db.prepare('SELECT * FROM league_entries WHERE id=?').get(id);if(!entry)throw new InputError('Registration not found.',404);if(entry.status!=='pending')throw new InputError('This registration has already been reviewed. Refresh the list.',409);
     if(b.status==='approved'&&b.verified!==true)throw new InputError('Confirm guardian identity and club roster before approval.');
@@ -120,7 +149,7 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
   }
   return false;
  }
- function publicPlayers(rows){return rows.filter(p=>{const e=db.prepare('SELECT consent FROM league_entries WHERE statsPlayerId=?').get(p.id);return!e||JSON.parse(e.consent).publicStats===true})}
+ function publicPlayers(rows){return rows.filter(p=>{const e=db.prepare('SELECT consent,status FROM league_entries WHERE statsPlayerId=?').get(p.id);return!e||(e.status==='approved'&&JSON.parse(e.consent).publicStats===true)})}
  function protectStatsIdentity(id,p){const entry=db.prepare('SELECT * FROM league_entries WHERE statsPlayerId=?').get(id);if(!entry)return;const team=db.prepare('SELECT * FROM league_teams WHERE id=?').get(entry.teamId);if(p.name!==entry.firstName+' '+entry.lastName||p.club!==team.club||p.ageGroup!==team.ageGroup)throw new InputError('This player is linked to a parent profile. Keep their registered name, club and age group; update only statistics.',409)}
  return{handle,publicPlayers,protectStatsIdentity};
 }
