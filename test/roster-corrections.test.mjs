@@ -28,3 +28,20 @@ test('organizer transfer approves a declined entry once without changing consent
  const stats=db.prepare('SELECT * FROM players').all();assert.equal(stats.length,1);assert.equal(stats[0].id,entry.statsPlayerId);assert.equal(stats[0].club,'Green Strikers FC');assert.equal(stats[0].ageGroup,'U10');assert.equal(stats[0].goals,0);
  const audit=JSON.parse(db.prepare('SELECT value FROM meta').get().value);assert.equal(audit.previousReviewNote,'Original decline reason');assert.equal(audit.previousStatus,'rejected');db.close();
 });
+
+test('pending division correction is exact, audited and idempotent without approving or changing consent',async()=>{
+ const {applyPendingDivisionCorrection}=await import('../roster-corrections.mjs');
+ const {createHash}=await import('node:crypto');
+ const db=new DatabaseSync(':memory:');
+ db.exec(`CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT);CREATE TABLE parent_accounts(id TEXT,name TEXT);CREATE TABLE league_teams(id TEXT,club TEXT,ageGroup TEXT,active INTEGER);CREATE TABLE league_entries(id TEXT,parentId TEXT,firstName TEXT,lastName TEXT,birthYear INTEGER,teamId TEXT,status TEXT,statsPlayerId TEXT,consent TEXT);CREATE TABLE league_entry_edits(id TEXT,entryId TEXT,action TEXT,previous TEXT,createdAt TEXT);
+ INSERT INTO parent_accounts VALUES('parent','Test Guardian');
+ INSERT INTO league_teams VALUES('old','Shakhtar Academy Winnipeg','U10',1),('new','Shakhtar Academy Winnipeg','U13',1);
+ INSERT INTO league_entries VALUES('entry','parent','Test','Junior',2014,'old','pending',NULL,'original');`);
+ const identityHash=createHash('sha256').update(JSON.stringify(['test','junior',2014,'test guardian'])).digest('hex');
+ assert.equal(applyPendingDivisionCorrection(db,'wrong'),false);
+ assert.equal(applyPendingDivisionCorrection(db,identityHash),true);
+ assert.equal(applyPendingDivisionCorrection(db,identityHash),false);
+ const entry=db.prepare('SELECT * FROM league_entries').get();
+ assert.equal(entry.teamId,'new');assert.equal(entry.status,'pending');assert.equal(entry.statsPlayerId,null);assert.equal(entry.consent,'original');assert.equal(entry.parentId,'parent');
+ assert.equal(db.prepare('SELECT count(*) n FROM league_entry_edits').get().n,1);db.close();
+});
