@@ -96,3 +96,10 @@ fieldset{border-color:#7184ac}
 .league-mail-settings{margin:28px 0}.league-mail-settings>summary{cursor:pointer;font-weight:700;padding:18px 0}.league-mail-settings .admin-panel{margin-top:10px}
 @media(max-width:650px){.league-review-filters{grid-template-columns:1fr 1fr;padding:18px}.league-review-filters .league-search{grid-column:auto}.league-review-filters .form-actions{grid-column:1/-1;justify-content:flex-start}.roster-header{padding:20px;gap:12px}.roster-header>img{width:54px;height:54px}.roster-header h2{font-size:1.75rem}.roster-kicker{font-size:.65rem}.roster-content{padding:22px 18px}.roster-table th,.roster-table td{padding:12px 10px}.roster-table{font-size:.875rem}.roster-close{width:40px;height:40px}.roster-header form{margin-top:0}}
 @media(max-width:400px){.league-review-filters{grid-template-columns:1fr}.league-review-filters .form-actions{grid-column:auto}.roster-header>img{display:none}}
+
+/* Inline roster transfer controls use the existing admin palette. */
+.league-transfer{padding-top:24px;border-top:1px solid #506798}
+.league-transfer h4{font-size:1.125rem;margin:0}.league-transfer .form-help{font-size:.875rem;max-width:65ch}
+.league-transfer-fields{display:grid;grid-template-columns:minmax(100px,.35fr) minmax(0,1fr);gap:18px}
+.league-transfer-fields label{min-width:0}.league-transfer-fields select{max-width:100%}.league-transfer>button{justify-self:start;min-height:48px;white-space:normal;text-align:center}
+@media(max-width:520px){.league-transfer-fields{grid-template-columns:1fr}.league-transfer>button{width:100%}}

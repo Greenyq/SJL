@@ -1,4 +1,4 @@
-import { applyRosterCorrections, applyOrganizerRosterCorrection } from './roster-corrections.mjs';
+import { applyRosterCorrections, applyOrganizerRosterCorrection, applyPendingDivisionCorrection } from './roster-corrections.mjs';
 import { randomBytes, randomUUID, scrypt, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { readFileSync } from 'node:fs';
@@ -30,6 +30,7 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
  if(!columns.includes('contactPhone'))db.exec("ALTER TABLE league_entries ADD COLUMN contactPhone TEXT NOT NULL DEFAULT '';");
  if(!columns.includes('clubContactConsent'))db.exec('ALTER TABLE league_entries ADD COLUMN clubContactConsent INTEGER NOT NULL DEFAULT 0;');
  applyRosterCorrections(db);
+ applyPendingDivisionCorrection(db);
  applyOrganizerRosterCorrection(db,process.env.SJL_ROSTER_CORRECTION?JSON.parse(process.env.SJL_ROSTER_CORRECTION):null);
  const mail=setupClubMail({db,clubs,InputError,email});
  const teams=()=>db.prepare('SELECT * FROM league_teams WHERE active=1 ORDER BY club,name').all();
@@ -120,6 +121,15 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
       if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=? AND id<>?').get(name,team.club,team.ageGroup,entry.statsPlayerId||''))throw new InputError('A statistics record with that name already exists.',409);
       db.prepare('UPDATE league_entries SET firstName=?,lastName=? WHERE id=?').run(firstName,lastName,id);
       if(entry.statsPlayerId)db.prepare('UPDATE players SET name=?,version=version+1 WHERE id=?').run(name,entry.statsPlayerId);
+     }else if(b.action==='transfer'){
+      if(entry.status==='archived')throw new InputError('Restore this registration before changing teams.',409);
+      if(b.expectedTeamId!==entry.teamId)throw new InputError('Team changed. Refresh before editing.',409);
+      const team=getTeam(text(b.teamId,'Team'));
+      if(team.id===entry.teamId)throw new InputError('Choose a different team.');
+      const name=entry.firstName+' '+entry.lastName;
+      if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=? AND id<>?').get(name,team.club,team.ageGroup,entry.statsPlayerId||''))throw new InputError('A player with this name already exists in the destination. Review the duplicate before moving.',409);
+      db.prepare('UPDATE league_entries SET teamId=? WHERE id=?').run(team.id,id);
+      if(entry.statsPlayerId)db.prepare('UPDATE players SET club=?,ageGroup=?,version=version+1 WHERE id=?').run(team.club,team.ageGroup,entry.statsPlayerId);
      }else if(b.action==='archive'){
       if(entry.status==='archived')throw new InputError('Registration is already archived.',409);
       db.prepare('INSERT INTO league_entry_archives VALUES(?,?)').run(id,entry.status);
@@ -129,8 +139,8 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
       if(entry.status!=='archived'||!archive)throw new InputError('Registration is not archived.',409);
       db.prepare('UPDATE league_entries SET status=? WHERE id=?').run(archive.previousStatus,id);
       db.prepare('DELETE FROM league_entry_archives WHERE entryId=?').run(id);
-     }else throw new InputError('Choose rename, archive or restore.');
-     db.prepare('INSERT INTO league_entry_edits VALUES(?,?,?,?,?)').run(randomUUID(),id,b.action,JSON.stringify({firstName:entry.firstName,lastName:entry.lastName,status:entry.status}),new Date().toISOString());
+     }else throw new InputError('Choose rename, transfer, archive or restore.');
+     db.prepare('INSERT INTO league_entry_edits VALUES(?,?,?,?,?)').run(randomUUID(),id,b.action,JSON.stringify({firstName:entry.firstName,lastName:entry.lastName,status:entry.status,teamId:entry.teamId,statsPlayerId:entry.statsPlayerId}),new Date().toISOString());
     });json(res,200,{ok:true});return true;
    }
    if(/^\/api\/admin\/league-entries\/[^/]+\/review$/.test(path)&&req.method==='POST'){
