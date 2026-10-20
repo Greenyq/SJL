@@ -50,13 +50,16 @@ export function applyPendingDivisionCorrection(db, identityHash='8364a3e2c36389f
  if(db.prepare('SELECT value FROM meta WHERE key=?').get(key))return false;
  db.exec('BEGIN IMMEDIATE');
  try {
-  const candidates=db.prepare(`SELECT e.*,a.name guardianName FROM league_entries e JOIN parent_accounts a ON a.id=e.parentId JOIN league_teams t ON t.id=e.teamId WHERE t.club='Shakhtar Academy Winnipeg' AND t.ageGroup='U10' AND e.status='pending' AND e.statsPlayerId IS NULL`).all();
+  const candidates=db.prepare(`SELECT e.*,a.name guardianName FROM league_entries e JOIN parent_accounts a ON a.id=e.parentId JOIN league_teams t ON t.id=e.teamId WHERE t.club='Shakhtar Academy Winnipeg' AND t.ageGroup='U10' AND e.status IN ('pending','approved','rejected')`).all();
   const matches=candidates.filter(e=>createHash('sha256').update(JSON.stringify([e.firstName.trim().toLowerCase(),e.lastName.trim().toLowerCase(),e.birthYear,e.guardianName.trim().toLowerCase()])).digest('hex')===identityHash);
   const targets=db.prepare("SELECT id FROM league_teams WHERE club='Shakhtar Academy Winnipeg' AND ageGroup='U13' AND active=1").all();
-  if(matches.length!==1||targets.length!==1){db.exec('ROLLBACK');return false}
+  if(matches.length!==1||targets.length!==1){console.info('Organizer division correction skipped: '+matches.length+' identity matches; '+targets.length+' destination teams.');db.exec('ROLLBACK');return false}
   const entry=matches[0],now=new Date().toISOString();
+  if(entry.statsPlayerId){const stats=db.prepare('SELECT * FROM players WHERE id=?').get(entry.statsPlayerId);if(!stats||stats.club!=='Shakhtar Academy Winnipeg'||stats.ageGroup!=='U10'){db.exec('ROLLBACK');return false}}
+  if(db.prepare("SELECT id FROM players WHERE lower(name)=lower(?) AND club='Shakhtar Academy Winnipeg' AND ageGroup='U13' AND id<>?").get(entry.firstName+' '+entry.lastName,entry.statsPlayerId||'')){db.exec('ROLLBACK');return false}
+  if(entry.statsPlayerId)db.prepare("UPDATE players SET ageGroup='U13',version=version+1 WHERE id=?").run(entry.statsPlayerId);
   db.prepare('UPDATE league_entries SET teamId=? WHERE id=?').run(targets[0].id,entry.id);
-  db.prepare('INSERT INTO league_entry_edits VALUES(?,?,?,?,?)').run(randomUUID(),entry.id,'transfer',JSON.stringify({teamId:entry.teamId,status:entry.status,statsPlayerId:null}),now);
+  db.prepare('INSERT INTO league_entry_edits VALUES(?,?,?,?,?)').run(randomUUID(),entry.id,'transfer',JSON.stringify({teamId:entry.teamId,status:entry.status,statsPlayerId:entry.statsPlayerId}),now);
   db.prepare('INSERT INTO meta VALUES(?,?)').run(key,JSON.stringify({entryId:entry.id,fromTeamId:entry.teamId,toTeamId:targets[0].id,appliedAt:now}));
   db.exec('COMMIT');return true;
  }catch(error){db.exec('ROLLBACK');throw error}

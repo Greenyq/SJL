@@ -33,7 +33,7 @@ test('pending division correction is exact, audited and idempotent without appro
  const {applyPendingDivisionCorrection}=await import('../roster-corrections.mjs');
  const {createHash}=await import('node:crypto');
  const db=new DatabaseSync(':memory:');
- db.exec(`CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT);CREATE TABLE parent_accounts(id TEXT,name TEXT);CREATE TABLE league_teams(id TEXT,club TEXT,ageGroup TEXT,active INTEGER);CREATE TABLE league_entries(id TEXT,parentId TEXT,firstName TEXT,lastName TEXT,birthYear INTEGER,teamId TEXT,status TEXT,statsPlayerId TEXT,consent TEXT);CREATE TABLE league_entry_edits(id TEXT,entryId TEXT,action TEXT,previous TEXT,createdAt TEXT);
+ db.exec(`CREATE TABLE players(id TEXT,name TEXT,club TEXT,ageGroup TEXT,version INTEGER,goals INTEGER);CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT);CREATE TABLE parent_accounts(id TEXT,name TEXT);CREATE TABLE league_teams(id TEXT,club TEXT,ageGroup TEXT,active INTEGER);CREATE TABLE league_entries(id TEXT,parentId TEXT,firstName TEXT,lastName TEXT,birthYear INTEGER,teamId TEXT,status TEXT,statsPlayerId TEXT,consent TEXT);CREATE TABLE league_entry_edits(id TEXT,entryId TEXT,action TEXT,previous TEXT,createdAt TEXT);
  INSERT INTO parent_accounts VALUES('parent','Test Guardian');
  INSERT INTO league_teams VALUES('old','Shakhtar Academy Winnipeg','U10',1),('new','Shakhtar Academy Winnipeg','U13',1);
  INSERT INTO league_entries VALUES('entry','parent','Test','Junior',2014,'old','pending',NULL,'original');`);
@@ -43,5 +43,9 @@ test('pending division correction is exact, audited and idempotent without appro
  assert.equal(applyPendingDivisionCorrection(db,identityHash),false);
  const entry=db.prepare('SELECT * FROM league_entries').get();
  assert.equal(entry.teamId,'new');assert.equal(entry.status,'pending');assert.equal(entry.statsPlayerId,null);assert.equal(entry.consent,'original');assert.equal(entry.parentId,'parent');
- assert.equal(db.prepare('SELECT count(*) n FROM league_entry_edits').get().n,1);db.close();
+ assert.equal(db.prepare('SELECT count(*) n FROM league_entry_edits').get().n,1);
+ db.exec("DELETE FROM meta;UPDATE league_entries SET teamId='old',status='approved',statsPlayerId='stats';INSERT INTO players VALUES('stats','Test Junior','Shakhtar Academy Winnipeg','U10',3,7);");
+ assert.equal(applyPendingDivisionCorrection(db,identityHash),true);
+ assert.equal(db.prepare('SELECT status FROM league_entries').get().status,'approved');
+ const stats=db.prepare('SELECT * FROM players').get();assert.equal(stats.ageGroup,'U13');assert.equal(stats.goals,7);assert.equal(stats.version,4);db.close();
 });
