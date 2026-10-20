@@ -12,6 +12,7 @@ The homepage serves parents checking fixtures, clubs and player statistics. Show
 - Use 14px card corners and 8px control corners, with borders defining elevation. Use compact horizontal club identity rows rather than full poster panels.
 - Maintain native labelled selects, clear keyboard focus, 48px primary controls, a skip link to fixtures, Escape dismissal for the mobile menu and reduced-motion support.
 - At 1100px use the menu; at 760px stack fixtures and leaderboards; at 520px stack filters and club rows. Preserve long club names and avoid horizontal page overflow.
+- On phones, stack the two hero actions at equal full width and 52px height. Registration tabs share equal grid tracks. Use a 20px SVG close icon centered without font-baseline offsets. Club age groups use a collapsible checkbox list with a selected-value summary; preserve multi-selection and native validation recovery.
 - Keep the schedule and player data sourced from existing APIs and schedule JSON. This stylesheet must not change private account, approval or consent behavior.
 
 `assets/home.css` owns public-page layout and is loaded after shared `assets/features.css`. Parent and admin pages keep their existing styles. No frontend framework or new runtime dependency is required.

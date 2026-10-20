@@ -35,7 +35,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var
 .hero p{color:var(--muted);font-size:1.0625rem;line-height:1.75;max-width:55ch;margin:20px 0 0}
 .hero .season-label{font-size:.8125rem;letter-spacing:.08em;font-weight:700;color:var(--yellow);margin-top:24px}
 .season-label span{display:inline-block;color:#7184ac;margin-inline:8px}
-.actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:28px}
+.actions{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap;margin-top:28px}
 .hero-clubs-link{font-size:.8125rem;font-weight:700;padding:12px 0;min-height:48px;display:inline-flex;align-items:center;gap:12px}
 .hero-clubs-link:hover{color:var(--yellow)}
 .hero-logo{width:100%;max-width:290px;height:auto;aspect-ratio:1;object-fit:contain;justify-self:end}
@@ -126,7 +126,28 @@ section[id]{scroll-margin-top:16px}
 .registration-form{display:grid;gap:22px}
 .registration-form input,.registration-form select,.registration-form textarea{border-radius:8px}
 .registration-form .primary{margin-top:4px}
-.age-options label{border-radius:6px}
+.age-field{padding:0;border:0;min-width:0}
+.age-field legend{padding:0;margin-bottom:8px}
+.age-picker{border:2px solid #94a6c7;border-radius:8px;background:white;color:var(--ink);color-scheme:light}
+.age-picker summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:12px 14px;cursor:pointer;list-style:none;font-size:1rem;line-height:1.5}
+.age-picker summary::-webkit-details-marker{display:none}
+.age-picker summary span{min-width:0;overflow-wrap:anywhere}
+.age-picker summary svg{flex-shrink:0}
+.age-picker[open] summary{border-bottom:1px solid #c6d0e3}
+.age-picker[open] summary svg{transform:rotate(180deg)}
+.age-picker .age-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:8px;max-height:244px;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#7184ac white}
+.age-picker .age-options label{justify-content:flex-start;min-height:44px;padding:10px;gap:12px;font-size:1rem;font-weight:600;background:white;color:var(--ink);border:0;border-radius:4px}
+.age-picker .age-options label:hover{background:#eef2f8}
+.age-picker .age-options label:has(input:checked){background:#e8eefc;color:var(--ink)}
+.age-picker .age-options input{accent-color:var(--blue);flex:0 0 20px}
+.age-help{margin-top:8px}
+.age-picker summary:focus-visible{outline-color:var(--yellow)}
+.roster-close{display:flex;align-items:center;justify-content:center;padding:0;line-height:1;flex-shrink:0}
+.roster-close svg{display:block;flex-shrink:0}
+.stats-toolbar .tab{min-width:82px}
+.registration-card .tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+.registration-card .tab{min-height:52px;line-height:1.4}
+.hero .actions .primary,.hero .actions .secondary{min-height:52px;text-align:center;line-height:1.4}
 fieldset{border-radius:8px}
 footer{padding-block:36px;background:#040b27;border-top:1px solid var(--line)}
 .footer{display:flex;align-items:center;flex-wrap:wrap;gap:24px;color:var(--muted);font-size:.8125rem}
@@ -179,7 +200,7 @@ footer{padding-block:36px;background:#040b27;border-top:1px solid var(--line)}
  .hero h1{font-size:clamp(2.5rem,10.2vw,3.375rem);padding-right:68px;text-wrap:initial}
  .hero h1 span{display:inline-block}
  .hero p{max-width:36ch}.hero .season-label{font-size:.75rem;margin-top:20px}
- .actions{gap:10px}.actions .primary,.actions .secondary{padding-inline:14px;font-size:.8125rem;flex:1}
+ .hero .actions{display:grid;grid-template-columns:1fr;gap:12px}.hero .actions .primary,.hero .actions .secondary{width:100%;padding:14px 18px;font-size:.9375rem;min-height:52px}.hero-clubs-link{width:auto}
  .section-head{flex-direction:column;gap:16px}.schedule-time{text-align:left;font-size:1.75rem}
  .schedule-time small{font-size:.6875rem}
  .schedule-filters{grid-template-columns:1fr;gap:16px}.schedule-filters label:last-child{grid-column:auto}

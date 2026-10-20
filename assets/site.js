@@ -58,12 +58,18 @@ const leagueClubs=[
 ];
 function option(select,value,label){const item=document.createElement('option');item.value=value;item.textContent=label;select.append(item)}
 leagueClubs.forEach(club=>option(document.getElementById('preferred-club'),club.name,club.name));
+const agePicker=document.querySelector('.age-picker'),ageSelection=document.getElementById('age-selection');
+function updateAgeSelection(){const selected=[...agePicker.querySelectorAll('input:checked')].map(input=>input.value);ageSelection.textContent=selected.length?selected.join(', '):'Select age groups'}
+agePicker.addEventListener('change',updateAgeSelection);
+agePicker.addEventListener('keydown',event=>{if(event.key==='Escape'&&agePicker.open){event.preventDefault();agePicker.open=false;agePicker.querySelector('summary').focus()}});
+document.addEventListener('click',event=>{if(!agePicker.contains(event.target))agePicker.open=false});
+document.getElementById('club-form').addEventListener('reset',()=>{agePicker.open=false;ageSelection.textContent='Select age groups'});
 for(const kind of ['club','player']){
  const form=document.getElementById(kind+'-form');
  form.addEventListener('submit',async event=>{
   event.preventDefault();const feedback=form.querySelector('.form-feedback'),button=form.querySelector('[type=submit]');feedback.textContent='';feedback.className='form-feedback';
   const fields=new FormData(form),payload=Object.fromEntries(fields);payload.kind=kind;
-  if(kind==='club'){payload.ageGroups=fields.getAll('ageGroups');if(!payload.ageGroups.length){feedback.textContent='Select at least one team age group.';feedback.classList.add('error');form.querySelector('[name=ageGroups]').focus();return}}
+  if(kind==='club'){payload.ageGroups=fields.getAll('ageGroups');if(!payload.ageGroups.length){feedback.textContent='Select at least one team age group.';feedback.classList.add('error');agePicker.open=true;form.querySelector('[name=ageGroups]').focus();return}}
   else payload.age=Number(payload.age);
   button.disabled=true;
   try{const response=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});let data;try{data=await response.json()}catch{throw new Error('Registration service is temporarily unavailable. Please try again later.')}if(!response.ok)throw new Error(data.error||'Unable to submit registration.');form.reset();feedback.textContent='Registration received. Thank you! Your reference: '+data.id.slice(0,8).toUpperCase()+'.';feedback.classList.add('success')}
