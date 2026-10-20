@@ -1,0 +1,195 @@
+/* Public homepage: navy, yellow and condensed sports typography.
+   Loaded after features.css; does not affect parent or administrator pages. */
+:root{--navy:#07133d;--navy2:#0c205c;--blue:#1746d1;--yellow:#ffd21e;--white:#fff;--ice:#eef2f8;--muted:#d0d9ed;--ink:#07112d;--line:#334976;--radius:14px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:96px;scrollbar-color:#7184ac var(--navy)}
+body{margin:0;font-family:Archivo,Arial,sans-serif;color:var(--white);background:var(--navy);line-height:1.6}
+::selection{background:var(--yellow);color:var(--ink)}
+a{color:inherit;text-decoration:none;text-underline-offset:4px}
+button{font:inherit;touch-action:manipulation}
+input,select,textarea{caret-color:var(--blue)}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--yellow);outline-offset:4px}
+.light a:focus-visible,.light select:focus-visible{outline-color:var(--blue)}
+.shell{width:min(1180px,calc(100% - 64px));margin-inline:auto}
+.skip-link{position:fixed;left:16px;top:12px;z-index:50;padding:12px 20px;background:var(--yellow);color:var(--ink);font-weight:700;transform:translateY(-160%);border-radius:8px}
+.skip-link:focus{transform:translateY(0)}
+.topbar{position:sticky;top:0;z-index:20;background:var(--navy);border-bottom:1px solid var(--line)}
+.nav{min-height:80px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.brand{display:flex;align-items:center;gap:10px;font:800 1.25rem/1.15 'Barlow Condensed',Arial,sans-serif}
+.brand img{width:48px;height:56px;object-fit:contain}
+.brand span{max-width:118px}
+.links{display:flex;align-items:center;gap:18px;font-size:.75rem;font-weight:700;line-height:1.3}
+.links a{padding-block:14px}
+.links a:hover{color:var(--yellow)}
+.links .pill,.links .pill:hover{color:var(--ink);padding:14px 18px}
+.menu{display:none;align-items:center;justify-content:center;width:48px;height:48px;border:1px solid var(--line);border-radius:8px;background:transparent;color:white;cursor:pointer}
+.pill,.primary,.secondary{display:inline-flex;align-items:center;justify-content:center;min-height:48px;border:1px solid transparent;border-radius:8px;padding:13px 22px;font-size:.875rem;font-weight:800;line-height:1.5;cursor:pointer;transition:background .18s ease,color .18s ease}
+.pill,.primary{background:var(--yellow);color:var(--ink)}
+.pill:hover,.primary:hover{background:#ffe264}
+.secondary{background:transparent;color:#fff;border-color:#7184ac}
+.secondary:hover{background:#203a72}
+.hero{background:#0a1947;border-bottom:1px solid var(--line)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.7fr);align-items:center;gap:72px;padding-block:64px}
+.hero h1{font:800 clamp(3.5rem,7.2vw,6rem)/.98 'Barlow Condensed',Arial,sans-serif;letter-spacing:-.025em;margin:0;max-width:780px;text-wrap:balance}
+.hero h1 span{color:var(--yellow)}
+.hero p{color:var(--muted);font-size:1.0625rem;line-height:1.75;max-width:55ch;margin:20px 0 0}
+.hero .season-label{font-size:.8125rem;letter-spacing:.08em;font-weight:700;color:var(--yellow);margin-top:24px}
+.season-label span{display:inline-block;color:#7184ac;margin-inline:8px}
+.actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:28px}
+.hero-clubs-link{font-size:.8125rem;font-weight:700;padding:12px 0;min-height:48px;display:inline-flex;align-items:center;gap:12px}
+.hero-clubs-link:hover{color:var(--yellow)}
+.hero-logo{width:100%;max-width:290px;height:auto;aspect-ratio:1;object-fit:contain;justify-self:end}
+section{padding-block:72px}
+section[id]{scroll-margin-top:16px}
+.light{background:var(--ice);color:var(--ink);color-scheme:light}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:32px;margin-bottom:28px}
+.section-head h2{font:800 clamp(2.5rem,4.5vw,3.5rem)/1.05 'Barlow Condensed',Arial,sans-serif;letter-spacing:-.015em;margin:0;text-wrap:balance}
+.section-intro{color:var(--muted);line-height:1.75;font-size:1rem;max-width:65ch;margin:14px 0 0}
+.light .section-intro{color:#485874}
+.schedule-time{font:700 2rem/1.15 'Barlow Condensed',Arial,sans-serif;white-space:nowrap;color:var(--blue);font-variant-numeric:tabular-nums;text-align:right}
+.schedule-time small{display:block;font:700 .75rem/1.5 Archivo,Arial,sans-serif;letter-spacing:.04em;margin-top:6px;color:#485874}
+.schedule-filters{display:grid;grid-template-columns:1fr .6fr 1fr;gap:20px;padding-block:24px;border-top:1px solid #c6d0e3;border-bottom:1px solid #c6d0e3}
+.schedule-filters label{font-size:.875rem;font-weight:700;min-width:0}
+.schedule-filters select{min-height:50px;font-size:1rem;border:1px solid #94a6c7;border-radius:8px;margin-top:8px}
+.schedule-summary{font-size:.875rem;margin:20px 0;color:#485874}
+.matchday{margin-bottom:28px}
+.matchday:last-child{margin-bottom:0}
+.matchday-title{font:700 1.5rem/1.3 'Barlow Condensed',Arial,sans-serif;margin:24px 0 16px;color:var(--ink)}
+.matches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.match{background:white;border:1px solid #c6d0e3;border-radius:var(--radius);padding:22px;min-width:0}
+.match-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:.75rem;line-height:1.5;font-weight:700;color:#485874;font-variant-numeric:tabular-nums;flex-wrap:wrap}
+.age{color:var(--blue)}
+.clubs{margin:22px 0 0;display:grid;gap:12px}
+.match .club{display:flex;align-items:center;gap:12px;font:700 1.5rem/1.2 'Barlow Condensed',Arial,sans-serif;overflow-wrap:anywhere}
+.match .club img{width:44px;height:44px;object-fit:contain;border-radius:8px;flex-shrink:0}
+.versus{font:700 .6875rem/1.5 Archivo,Arial,sans-serif;letter-spacing:.08em;color:#485874;padding-left:56px}
+.schedule-empty{padding:24px;background:white;border:1px dashed #94a6c7;border-radius:var(--radius);color:#485874}
+.club-count{font-size:.875rem;color:var(--muted);white-space:nowrap;margin:0}
+.club-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.member{border:1px solid var(--line);border-radius:var(--radius);background:var(--navy2);overflow:hidden;display:flex;flex-direction:column}
+.member-roster{display:grid;grid-template-columns:88px minmax(0,1fr);gap:20px;align-items:center;flex:1;padding:22px;transition:background .18s ease}
+.member-roster:hover{background:#142d74}
+.member-logo{display:grid;place-items:center;width:88px;height:88px;border-radius:10px;overflow:hidden;background:var(--club-bg)}
+.member-logo img{width:100%;height:100%;max-height:88px;object-fit:contain;padding:8px}
+.member-logo.shakhtar img{padding:0;transform:scale(2.5)}
+.member-roster .member-info{padding:0;min-width:0}
+.member-roster .member-name{font:700 1.5rem/1.15 'Barlow Condensed',Arial,sans-serif;margin:0;overflow-wrap:anywhere}
+.club-link{display:flex;justify-content:space-between;gap:8px;margin-top:12px;color:var(--muted);font-size:.8125rem;line-height:1.5}
+.club-link span{color:var(--yellow)}
+.member .member-website{border-top:1px solid var(--line);padding:12px 22px;font-size:.8125rem;color:var(--muted);text-decoration:underline}
+.member .member-website:hover{color:var(--yellow)}
+#highlights{border-top:1px solid var(--line)}
+.video-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:18px}
+.video-card{position:relative;min-height:320px;border-radius:var(--radius);overflow:hidden;padding:24px;display:flex;flex-direction:column;justify-content:space-between;gap:48px;background-color:var(--navy2);background-image:linear-gradient(180deg,#07133d33,#040b27 100%),var(--poster);background-size:cover;background-position:center;border:1px solid var(--line)}
+.video-card:hover{border-color:var(--yellow)}
+.video-label{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.6875rem;font-weight:700;letter-spacing:.05em;line-height:1.5}
+.video-label span{background:var(--navy);padding:6px 8px;border-radius:4px}
+.play{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--yellow);color:var(--ink)}
+.video-card h3{font:700 2rem/1.1 'Barlow Condensed',Arial,sans-serif;margin:16px 0 8px}
+.video-card p{font-size:.875rem;line-height:1.6;color:var(--muted);margin:0}
+.stats-section{background:var(--navy2);border-top:1px solid var(--line)}
+.stats-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:28px 0}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{border-radius:8px;font-size:.875rem;padding:12px 20px;min-height:48px;border:1px solid #7184ac;background:transparent;color:white;font-weight:700;cursor:pointer}
+.tab:hover:not(.active){background:#203a72}
+.tab.active{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+.stats-note,.stats-footer{color:var(--muted);font-size:.875rem;line-height:1.7}
+.leader-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.leader-card{border:1px solid #506798;border-radius:var(--radius);background:var(--navy);overflow:hidden}
+.leader-heading{display:flex;align-items:center;gap:14px;padding:22px;border-bottom:1px solid var(--line)}
+.leader-icon{display:grid;place-items:center;width:36px;height:36px;color:var(--yellow);flex-shrink:0}
+.leader-icon svg{width:26px;height:26px}
+.leader-heading h3{font:700 1.75rem/1.1 'Barlow Condensed',Arial,sans-serif;margin:0}
+.leader-heading small{display:block;color:var(--muted);font-size:.8125rem;line-height:1.6;margin-top:6px}
+.leader-list{list-style:none;padding:0;margin:0}
+.leader-row{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.leader-row:last-child{border-bottom:0}
+.leader-rank{color:var(--muted);width:24px;font-weight:700}
+.leader-player{flex:1;min-width:0;font-weight:700;overflow-wrap:anywhere}
+.leader-player small{display:block;color:var(--muted);font-size:.8125rem;margin-top:4px;font-weight:400}
+.leader-value{color:var(--yellow);font:700 2rem/1 'Barlow Condensed',Arial,sans-serif}
+.stats-empty{padding:28px 22px}
+.stats-empty strong{display:block;font-weight:600;font-size:1rem;margin-bottom:8px}
+.stats-empty p{margin:0;color:var(--muted);line-height:1.7;font-size:.875rem;max-width:60ch}
+.stats-footer{margin:22px 0 0}
+.stories{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px}
+.story{border-top:2px solid var(--blue);padding-top:24px}
+.story small{font-size:.75rem;font-weight:700;letter-spacing:.06em;color:#485874}
+.story h3{font:700 1.875rem/1.15 'Barlow Condensed',Arial,sans-serif;margin:12px 0 0;text-wrap:balance}
+.registration-section{background:var(--navy)}
+.registration-layout{display:grid;grid-template-columns:.8fr 1.2fr;gap:64px;align-items:start}
+.registration-intro h3{font:700 2.5rem/1.1 'Barlow Condensed',Arial,sans-serif;margin:0 0 24px}
+.registration-intro p{font-size:1rem;line-height:1.75;color:var(--muted);max-width:55ch}
+.registration-card{background:var(--navy2);border:1px solid #506798;padding:32px;border-radius:var(--radius)}
+.registration-card .tabs{margin-bottom:28px;gap:10px}
+.registration-card .tab{font-size:.8125rem;padding:12px 16px}
+.registration-form{display:grid;gap:22px}
+.registration-form input,.registration-form select,.registration-form textarea{border-radius:8px}
+.registration-form .primary{margin-top:4px}
+.age-options label{border-radius:6px}
+fieldset{border-radius:8px}
+footer{padding-block:36px;background:#040b27;border-top:1px solid var(--line)}
+.footer{display:flex;align-items:center;flex-wrap:wrap;gap:24px;color:var(--muted);font-size:.8125rem}
+.footer>img{width:48px;height:56px;object-fit:contain}
+.social{display:flex;gap:24px;flex-wrap:wrap;margin-left:auto;color:white;font-weight:700}
+.social a{min-height:44px;display:inline-flex;align-items:center}
+.social a:hover{color:var(--yellow)}
+.footer-contact{flex-basis:100%;border-top:1px solid var(--line);padding-top:24px;line-height:1.8}
+.footer-contact a{overflow-wrap:anywhere}
+@media(min-width:1101px) and (max-width:1240px){.brand span{display:none}.links{gap:14px}}
+@media(max-width:1100px){
+ .links{display:none}.menu{display:flex}
+ .links.is-open{display:flex;position:absolute;top:80px;left:0;right:0;align-items:stretch;padding:20px 32px;background:var(--navy);flex-direction:column;gap:4px;border-bottom:1px solid var(--line);max-height:calc(100dvh - 80px);overflow-y:auto}
+ .links a{font-size:.9375rem;min-height:44px;padding:12px 16px;border-radius:6px}
+ .links a:hover{background:var(--navy2)}
+ .links .pill:hover{background:#ffe264}
+ .brand span{max-width:none}
+ .hero-grid{gap:32px}.hero-logo{max-width:240px}
+ .club-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .matches{gap:12px}.match{padding:18px}
+}
+@media(max-width:760px){
+ .shell{width:calc(100% - 40px)}section{padding-block:48px}
+ .hero-grid{grid-template-columns:minmax(0,1fr) 110px;padding-block:40px;gap:20px}
+ .hero h1{font-size:clamp(2.75rem,7.8vw,4rem)}
+ .hero-logo{width:110px;align-self:start;margin-top:8px}
+ .hero p{font-size:1rem}.hero .season-label{font-size:.6875rem}
+ .actions{margin-top:24px}.hero-clubs-link{width:100%;padding-bottom:0}
+ .section-head{gap:20px;align-items:flex-start}.schedule-time{font-size:1.5rem}
+ .schedule-time small{font-size:.625rem}
+ .schedule-filters{grid-template-columns:1fr 1fr;gap:16px}
+ .schedule-filters label:last-child{grid-column:1/-1}
+ .matches,.video-grid,.leader-grid{grid-template-columns:1fr}
+ .match{padding:20px}.match-meta{font-size:.8125rem}.match .club{font-size:1.5rem}
+ .club-grid{gap:12px}.member-roster{grid-template-columns:60px minmax(0,1fr);gap:14px;padding:18px}
+ .member-logo{width:60px;height:60px}.member-logo img{max-height:60px;padding:5px}
+ .member-roster .member-name{font-size:1.375rem}
+ .club-link{font-size:.75rem}
+ .video-card{min-height:280px}
+ .stories{grid-template-columns:1fr;gap:28px}
+ .story{padding-top:20px}.story h3{max-width:32ch}
+ .registration-layout{grid-template-columns:1fr;gap:28px}
+ .registration-intro h3{font-size:2rem}.registration-intro p{max-width:65ch}
+ .registration-card{padding:24px}
+ .footer{gap:16px}.social{margin-left:0;flex-basis:100%}
+}
+@media(max-width:520px){
+ .hero-grid{grid-template-columns:minmax(0,1fr);position:relative;padding-block:36px}
+ .hero-logo{position:absolute;right:0;top:32px;width:64px;margin:0}
+ .hero h1{font-size:clamp(2.5rem,10.2vw,3.375rem);padding-right:68px;text-wrap:initial}
+ .hero h1 span{display:inline-block}
+ .hero p{max-width:36ch}.hero .season-label{font-size:.75rem;margin-top:20px}
+ .actions{gap:10px}.actions .primary,.actions .secondary{padding-inline:14px;font-size:.8125rem;flex:1}
+ .section-head{flex-direction:column;gap:16px}.schedule-time{text-align:left;font-size:1.75rem}
+ .schedule-time small{font-size:.6875rem}
+ .schedule-filters{grid-template-columns:1fr;gap:16px}.schedule-filters label:last-child{grid-column:auto}
+ .club-grid{grid-template-columns:1fr}.club-count{margin-top:-6px}
+ .member-roster{grid-template-columns:72px minmax(0,1fr);padding:20px;gap:20px}
+ .member-logo{width:72px;height:72px}.member-logo img{max-height:72px}
+ .member-roster .member-name{font-size:1.625rem}.club-link{font-size:.8125rem}
+ .stats-toolbar{align-items:flex-start;flex-direction:column;gap:12px}
+ .registration-card{padding:20px}.registration-card .tabs{display:grid;grid-template-columns:1fr}
+ .registration-card .tab{width:100%;font-size:.875rem}
+ .footer-contact{font-size:.875rem}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
