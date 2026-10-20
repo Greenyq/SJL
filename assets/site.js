@@ -1,9 +1,21 @@
 const categories = [
-      {key:'goals', title:'TOP SCORERS', subtitle:'Goals', icon:'⚽'},
-      {key:'assists', title:'TOP ASSISTS', subtitle:'Assists', icon:'↗'},
-      {key:'contributions', title:'GOALS + ASSISTS', subtitle:'Goal contributions', icon:'★'},
-      {key:'cleanSheets', title:'CLEAN SHEETS', subtitle:'Goalkeepers • matches without conceding', icon:'🧤'}
+      {key:'goals', title:'TOP SCORERS', subtitle:'Goals', icon:'goals'},
+      {key:'assists', title:'TOP ASSISTS', subtitle:'Assists', icon:'assists'},
+      {key:'contributions', title:'GOALS + ASSISTS', subtitle:'Goal contributions', icon:'contributions'},
+      {key:'cleanSheets', title:'CLEAN SHEETS', subtitle:'Goalkeepers • matches without conceding', icon:'cleanSheets'}
     ];
+    const iconPaths={
+      goals:'M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1',
+      assists:'M4 18 18 4M7 4h11v11',
+      contributions:'m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z',
+      cleanSheets:'M5 4h14v7c0 5-7 9-7 9s-7-4-7-9ZM9 11l2 2 4-4'
+    };
+    function createStatIcon(key){
+      const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),path=document.createElementNS(ns,'path');
+      svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.75');svg.setAttribute('stroke-linecap','round');svg.setAttribute('stroke-linejoin','round');path.setAttribute('d',iconPaths[key]);svg.append(path);
+      if(key==='goals'){const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx','12');circle.setAttribute('cy','12');circle.setAttribute('r','5');svg.append(circle)}
+      return svg;
+    }
     let players=[],selectedAge='U10',statsFailed=false;
     const number=value=>Number.isFinite(value)&&value>=0?value:0;
     function renderLeaders(){
@@ -12,7 +24,7 @@ const categories = [
       categories.forEach(category=>{
         const card=document.createElement('article');card.className='leader-card';
         const heading=document.createElement('div');heading.className='leader-heading';
-        const icon=document.createElement('span');icon.className='leader-icon';icon.setAttribute('aria-hidden','true');icon.textContent=category.icon;
+        const icon=document.createElement('span');icon.className='leader-icon';icon.setAttribute('aria-hidden','true');icon.append(createStatIcon(category.icon));
         const label=document.createElement('div'),title=document.createElement('h3'),subtitle=document.createElement('small');title.textContent=category.title;subtitle.textContent=category.subtitle;label.append(title,subtitle);heading.append(icon,label);card.append(heading);
         const score=player=>category.key==='contributions'?number(player.goals)+number(player.assists):number(player[category.key]);
         const leaders=players.filter(p=>p.ageGroup===selectedAge&&score(p)>0).sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name));
@@ -29,8 +41,12 @@ const categories = [
     renderLeaders();
     fetch('/api/stats').then(response=>{if(!response.ok)throw new Error('Statistics unavailable');return response.json()}).then(data=>{if(!Array.isArray(data.players))throw new Error('Invalid statistics');players=data.players.filter(p=>p&&typeof p.name==='string'&&typeof p.club==='string');renderLeaders()}).catch(()=>{statsFailed=true;renderLeaders()});
     const menu=document.querySelector('.menu'),links=document.querySelector('.links');
-menu.addEventListener('click',()=>{const open=links.classList.toggle('is-open');menu.setAttribute('aria-expanded',String(open))});
-links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{links.classList.remove('is-open');menu.setAttribute('aria-expanded','false')}));
+function closeMenu(){links.classList.remove('is-open');menu.setAttribute('aria-expanded','false');menu.setAttribute('aria-label','Open menu')}
+menu.addEventListener('click',()=>{const open=links.classList.toggle('is-open');menu.setAttribute('aria-expanded',String(open));menu.setAttribute('aria-label',open?'Close menu':'Open menu')});
+links.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenu));
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&links.classList.contains('is-open')){closeMenu();menu.focus()}});
+document.addEventListener('click',event=>{if(!event.target.closest('.nav'))closeMenu()});
+window.matchMedia('(min-width: 1101px)').addEventListener('change',event=>{if(event.matches)closeMenu()});
 
 const leagueClubs=[
  {name:'Prairie Sky FC',slug:'prairie-sky',aliases:['Prairie Sky FC']},
