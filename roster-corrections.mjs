@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 // Organizer-requested correction, 2026-10-18. Match the verified stable player
 // ID so no other registration with a similar name can be moved.
 export function applyRosterCorrections(db) {
@@ -40,5 +40,24 @@ export function applyOrganizerRosterCorrection(db, correction) {
   db.prepare("UPDATE league_entries SET teamId=?,status='approved',statsPlayerId=?,reviewNote=?,reviewedAt=? WHERE id=?").run(team.id,statsId,'Registration corrected and approved by the organizer. '+team.name+'.',now,entry.id);
   db.prepare('INSERT INTO meta(key,value) VALUES(?,?)').run(marker,JSON.stringify({entryId:entry.id,fromTeamId:entry.teamId,toTeamId:team.id,previousStatus:entry.status,previousReviewNote:entry.reviewNote,previousReviewedAt:entry.reviewedAt,statsPlayerId:statsId,appliedAt:now}));
   db.exec('COMMIT');
+ }catch(error){db.exec('ROLLBACK');throw error}
+}
+
+// A screenshot-verified pending registration correction. Keep the child's and
+// guardian's identifying details out of source; require an exact identity hash.
+export function applyPendingDivisionCorrection(db, identityHash='8364a3e2c36389f59a81fd1197934ff7ef8576594393097cdb462fe3eddfc147') {
+ const key='pending-division-correction-20261020';
+ if(db.prepare('SELECT value FROM meta WHERE key=?').get(key))return false;
+ db.exec('BEGIN IMMEDIATE');
+ try {
+  const candidates=db.prepare(`SELECT e.*,a.name guardianName FROM league_entries e JOIN parent_accounts a ON a.id=e.parentId JOIN league_teams t ON t.id=e.teamId WHERE t.club='Shakhtar Academy Winnipeg' AND t.ageGroup='U10' AND e.status='pending' AND e.statsPlayerId IS NULL`).all();
+  const matches=candidates.filter(e=>createHash('sha256').update(JSON.stringify([e.firstName.trim().toLowerCase(),e.lastName.trim().toLowerCase(),e.birthYear,e.guardianName.trim().toLowerCase()])).digest('hex')===identityHash);
+  const targets=db.prepare("SELECT id FROM league_teams WHERE club='Shakhtar Academy Winnipeg' AND ageGroup='U13' AND active=1").all();
+  if(matches.length!==1||targets.length!==1){db.exec('ROLLBACK');return false}
+  const entry=matches[0],now=new Date().toISOString();
+  db.prepare('UPDATE league_entries SET teamId=? WHERE id=?').run(targets[0].id,entry.id);
+  db.prepare('INSERT INTO league_entry_edits VALUES(?,?,?,?,?)').run(randomUUID(),entry.id,'transfer',JSON.stringify({teamId:entry.teamId,status:entry.status,statsPlayerId:null}),now);
+  db.prepare('INSERT INTO meta VALUES(?,?)').run(key,JSON.stringify({entryId:entry.id,fromTeamId:entry.teamId,toTeamId:targets[0].id,appliedAt:now}));
+  db.exec('COMMIT');return true;
  }catch(error){db.exec('ROLLBACK');throw error}
 }

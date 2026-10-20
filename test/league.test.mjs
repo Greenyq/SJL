@@ -59,6 +59,33 @@ test('admin corrects names across profiles and totals; archival is private and r
  assert.equal((await api(path,'POST',{...rename,expectedName:'Corrected Junior',firstName:'Test'},admin)).response.status,200);
  const db=new DatabaseSync(join(dir,'sjl.sqlite'));assert.equal(db.prepare('SELECT count(*) n FROM league_entry_edits WHERE entryId=?').get(entryId).n,4);db.close();
 });
+test('admin transfers pending and approved players atomically while retaining totals, consent and status',async()=>{
+ const destination=(await api('/api/league/teams')).data.teams.find(t=>t.club===team.club&&t.ageGroup==='U13');
+ const path='/api/admin/league-entries/'+entryId+'/edit';
+ const request={action:'transfer',expectedName:'Test Junior',expectedStatus:'approved',expectedTeamId:team.id,teamId:destination.id};
+ assert.equal((await api(path,'POST',request,parentA)).response.status,401);
+ assert.equal((await api(path,'POST',{...request,teamId:'missing'},admin)).response.status,400);
+ const duplicate=await api('/api/admin/players','POST',{name:'Test Junior',club:destination.club,ageGroup:'U13',goals:0,assists:0,cleanSheets:0},admin);
+ assert.equal((await api(path,'POST',request,admin)).response.status,409);
+ assert.equal((await api('/api/parent/players','GET',undefined,parentA)).data.players.find(p=>p.id===entryId).team.id,team.id);
+ await api('/api/admin/players/'+duplicate.data.player.id,'PUT',{...duplicate.data.player,name:'Separate Duplicate'},admin);
+ assert.equal((await api(path,'POST',request,admin)).response.status,200);
+ let profile=(await api('/api/parent/players','GET',undefined,parentA)).data.players.find(p=>p.id===entryId);
+ assert.equal(profile.status,'approved');assert.equal(profile.team.id,destination.id);assert.equal(profile.stats.id,statsId);assert.equal(profile.stats.ageGroup,'U13');assert.equal(profile.stats.goals,9);assert.equal(profile.consent.publicStats,false);assert.ok(profile.schedule.matches.every(m=>m.ageGroup==='U13'));
+ assert.equal((await api(path,'POST',request,admin)).response.status,409,'stale transfer rejected');
+ assert.equal((await api(path,'POST',{...request,expectedTeamId:destination.id,teamId:team.id},admin)).response.status,200);
+ const pending=(await api('/api/parent/players','POST',{...entry(),firstName:'Transfer'},parentA)).data.player;
+ const pendingPath='/api/admin/league-entries/'+pending.id+'/edit';
+ const move={...request,expectedName:'Transfer Junior',expectedStatus:'pending'};
+ assert.equal((await api(pendingPath,'POST',move,admin)).response.status,200);
+ profile=(await api('/api/parent/players','GET',undefined,parentA)).data.players.find(p=>p.id===pending.id);
+ assert.equal(profile.status,'pending');assert.equal(profile.stats,null);assert.equal(profile.team.id,destination.id);assert.equal(profile.consent.media,false);
+ assert.equal((await api(pendingPath,'POST',{action:'archive',expectedName:'Transfer Junior',expectedStatus:'pending'},admin)).response.status,200);
+ assert.equal((await api(pendingPath,'POST',{...move,expectedStatus:'archived',expectedTeamId:destination.id,teamId:team.id},admin)).response.status,409);
+ const db=new DatabaseSync(join(dir,'sjl.sqlite'));
+ const audit=db.prepare("SELECT previous FROM league_entry_edits WHERE entryId=? AND action='transfer'").all(entryId);
+ assert.equal(audit.length,2);assert.equal(JSON.parse(audit[0].previous).teamId,team.id);db.close();
+});
 test('parent sessions, profiles and permission history survive restart; recovery rotates code and invalidates sessions',async()=>{await stop();await start();assert.equal((await api('/api/parent/players','GET',undefined,parentA)).data.players.length,2);assert.equal((await api('/api/admin/session','GET',undefined,admin)).response.status,401);assert.equal((await api('/api/parent/recover','POST',{email:'guardian-a@example.test',password:parentPassword,recoveryCode:'incorrect-code'})).response.status,401);const r=await api('/api/parent/recover','POST',{email:'guardian-a@example.test',password:parentPassword,recoveryCode:recovery});assert.equal(r.response.status,200);assert.notEqual(r.data.recoveryCode,recovery);assert.equal((await api('/api/parent/players','GET',undefined,parentA)).response.status,401);assert.equal((await api('/api/parent/recover','POST',{email:'guardian-a@example.test',password:parentPassword,recoveryCode:recovery})).response.status,401);parentA=extractCookie(r.response);assert.equal((await api('/api/parent/players','GET',undefined,parentA)).data.players[0].stats.goals,0);assert.equal((await api('/api/parent/logout','POST',{},parentA)).response.status,200);assert.equal((await api('/api/parent/session','GET',undefined,parentA)).response.status,401)});
 
 test('startup adds newly scheduled teams to an existing database without reactivating disabled teams',async()=>{
