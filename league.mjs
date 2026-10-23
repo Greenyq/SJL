@@ -32,6 +32,31 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
  applyRosterCorrections(db);
  if(applyPendingDivisionCorrection(db))console.info('Organizer pending division correction applied; approval status preserved.');
  applyOrganizerRosterCorrection(db,process.env.SJL_ROSTER_CORRECTION?JSON.parse(process.env.SJL_ROSTER_CORRECTION):null);
+
+ // One-time organizer-confirmed consent update (2026-10-23).
+ // Match the verified identity privately by digest; preserve the guardian signature.
+ {
+  const marker='organizer-consent-20261023';
+  if(!db.prepare('SELECT value FROM meta WHERE key=?').get(marker)){
+   transactionConsentCorrection();
+  }
+  function transactionConsentCorrection(){
+   db.exec('BEGIN IMMEDIATE');
+   try{
+    const entries=db.prepare("SELECT e.*,a.name guardianName FROM league_entries e JOIN parent_accounts a ON a.id=e.parentId JOIN league_teams t ON t.id=e.teamId WHERE e.status='approved' AND t.club='Shakhtar Academy Winnipeg' AND t.ageGroup='U10'").all();
+    const matches=entries.filter(e=>hash(JSON.stringify([e.firstName.trim().toLowerCase(),e.lastName.trim().toLowerCase(),e.birthYear,e.guardianName.trim().toLowerCase()]))==='678fc944d56529d00f7adac188d251551d52e6e70d79e4421b105aa689a145a4');
+    if(matches.length!==1){db.exec('ROLLBACK');return}
+    const entry=matches[0],previous=JSON.parse(entry.consent),now=new Date().toISOString();
+    const consent={...previous,media:true,interviews:true,publicStats:true};
+    db.prepare('UPDATE league_entries SET consent=? WHERE id=?').run(JSON.stringify(consent),entry.id);
+    db.prepare('INSERT INTO league_entry_edits VALUES(?,?,?,?,?)').run(randomUUID(),entry.id,'organizer-consent-update',JSON.stringify({consent:previous,source:'Organizer reported a conversation confirming all three permissions on 2026-10-23.',updatedConsent:consent}),now);
+    db.prepare('INSERT INTO league_consent_events VALUES(?,?,?,?,?,?)').run(randomUUID(),entry.id,entry.parentId,JSON.stringify({...consent,source:'organizer-reported-conversation'}),now,entry.policyVersion);
+    db.prepare('INSERT INTO meta VALUES(?,?)').run(marker,JSON.stringify({entryId:entry.id,appliedAt:now}));
+    db.exec('COMMIT');
+   }catch(error){db.exec('ROLLBACK');throw error}
+  }
+ }
+
  const mail=setupClubMail({db,clubs,InputError,email});
  const teams=()=>db.prepare('SELECT * FROM league_teams WHERE active=1 ORDER BY club,name').all();
  function parent(req){const token=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith('sjl_parent='))?.slice(11);if(!token)return null;return db.prepare('SELECT a.id,a.email,a.name,s.tokenHash FROM parent_sessions s JOIN parent_accounts a ON a.id=s.parentId WHERE s.tokenHash=? AND s.expires>?').get(hash(token),Date.now())||null}
