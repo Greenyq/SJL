@@ -68,7 +68,7 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
  function getTeam(id){const team=db.prepare('SELECT * FROM league_teams WHERE id=? AND active=1').get(id);if(!team)throw new InputError('Choose an available league team.');return team}
  function profile(e){const team=db.prepare('SELECT * FROM league_teams WHERE id=?').get(e.teamId);const stats=e.statsPlayerId?db.prepare('SELECT * FROM players WHERE id=?').get(e.statsPlayerId):null;const matches=schedule.matches.filter(m=>m.ageGroup===team.ageGroup&&(canonical(m.home)===team.club||canonical(m.away)===team.club));return{...e,consent:JSON.parse(e.consent),team,stats,schedule:{season:schedule.season,timezone:schedule.timezone,matches}}}
  function transaction(fn){db.exec('BEGIN IMMEDIATE');try{const result=fn();db.exec('COMMIT');return result}catch(error){db.exec('ROLLBACK');throw error}}
- async function handle(req,res,path,isAdmin){
+ async function handle(req,res,path,isAdmin,{club:scopeClub}={}){
   if(path==='/api/league/rosters'&&req.method==='GET'){
    const roster=teams().map(t=>({id:t.id,club:t.club,ageGroup:t.ageGroup,name:t.name,players:[]}));
    const byTeam=new Map(roster.map(t=>[t.id,t]));
@@ -122,21 +122,26 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
   }
   if(path.startsWith('/api/admin/league-')){
    isAdmin(req);
+   const inScope=e=>!scopeClub||db.prepare('SELECT club FROM league_teams WHERE id=?').get(e.teamId)?.club===scopeClub;
+   if(scopeClub&&path.startsWith('/api/admin/league-mail'))throw new InputError('Only the super administrator can manage league email.',403);
    if(path==='/api/admin/league-mail'&&req.method==='GET'){json(res,200,mail.overview());return true}
    if(path==='/api/admin/league-mail/contact'&&req.method==='PUT'){const b=await body(req);mail.updateContact(b.club,b.email);json(res,200,{ok:true});return true}
    if(path==='/api/admin/league-mail/retry'&&req.method==='POST'){const b=await body(req);mail.retry(text(b.id,'Notification ID'));void mail.flush().catch(()=>console.error('Club email queue could not be processed.'));json(res,200,{ok:true});return true}
-   if(path==='/api/admin/league-teams'&&req.method==='GET'){json(res,200,{teams:teams()});return true}
+   if(path==='/api/admin/league-teams'&&req.method==='GET'){json(res,200,{teams:teams().filter(t=>!scopeClub||t.club===scopeClub)});return true}
    if(path==='/api/admin/league-teams'&&req.method==='POST'){
-    const b=await body(req);if(!clubs.includes(b.club)||!['U10','U13'].includes(b.ageGroup))throw new InputError('Choose a league club and age group.');const name=text(b.name,'Team name');if(db.prepare('SELECT id FROM league_teams WHERE club=? AND ageGroup=? AND name=?').get(b.club,b.ageGroup,name))throw new InputError('This team already exists.',409);const id=randomUUID();db.prepare('INSERT INTO league_teams(id,club,ageGroup,name) VALUES(?,?,?,?)').run(id,b.club,b.ageGroup,name);json(res,201,{ok:true});return true;
+    const b=await body(req);if(scopeClub&&b.club!==scopeClub)throw new InputError('You can manage only your own club.',403);if(!clubs.includes(b.club)||!['U10','U13'].includes(b.ageGroup))throw new InputError('Choose a league club and age group.');const name=text(b.name,'Team name');if(db.prepare('SELECT id FROM league_teams WHERE club=? AND ageGroup=? AND name=?').get(b.club,b.ageGroup,name))throw new InputError('This team already exists.',409);const id=randomUUID();db.prepare('INSERT INTO league_teams(id,club,ageGroup,name) VALUES(?,?,?,?)').run(id,b.club,b.ageGroup,name);json(res,201,{ok:true});return true;
    }
    if(path==='/api/admin/league-entries'&&req.method==='GET'){
-    json(res,200,{entries:db.prepare('SELECT * FROM league_entries ORDER BY signedAt DESC').all().map(e=>({...profile(e),notification:mail.forEntry(e.id),parentNotification:mail.forEntry(e.id,'parent'),parent:db.prepare('SELECT name,email FROM parent_accounts WHERE id=?').get(e.parentId),consentHistory:db.prepare('SELECT consent,createdAt,policyVersion FROM league_consent_events WHERE entryId=? ORDER BY createdAt').all(e.id).map(v=>({...v,consent:JSON.parse(v.consent)}))}))});return true;
+    json(res,200,{entries:db.prepare('SELECT * FROM league_entries ORDER BY signedAt DESC').all().filter(inScope).map(e=>{
+     if(scopeClub){const p=profile(e),contact=e.clubContactConsent===1?db.prepare('SELECT name,email FROM parent_accounts WHERE id=?').get(e.parentId):{name:'Not shared with club',email:''};return{id:e.id,firstName:e.firstName,lastName:e.lastName,birthYear:e.birthYear,status:e.status,team:p.team,stats:p.stats,reviewNote:e.reviewNote,consent:{media:p.consent.media,interviews:p.consent.interviews,publicStats:p.consent.publicStats},parent:contact,contactPhone:e.clubContactConsent?e.contactPhone:'',clubContactConsent:e.clubContactConsent,consentHistory:[]}}
+     return{...profile(e),notification:mail.forEntry(e.id),parentNotification:mail.forEntry(e.id,'parent'),parent:db.prepare('SELECT name,email FROM parent_accounts WHERE id=?').get(e.parentId),consentHistory:db.prepare('SELECT consent,createdAt,policyVersion FROM league_consent_events WHERE entryId=? ORDER BY createdAt').all(e.id).map(v=>({...v,consent:JSON.parse(v.consent)}))}
+    })});return true;
    }
    if(/^\/api\/admin\/league-entries\/[^/]+\/edit$/.test(path)&&req.method==='POST'){
     const id=path.split('/')[4],b=await body(req);
     transaction(()=>{
      const entry=db.prepare('SELECT * FROM league_entries WHERE id=?').get(id);
-     if(!entry)throw new InputError('Registration not found.',404);
+     if(!entry||!inScope(entry))throw new InputError('Registration not found.',404);
      if(b.expectedName!==entry.firstName+' '+entry.lastName||b.expectedStatus!==entry.status)throw new InputError('Registration changed. Refresh before editing.',409);
      if(b.action==='rename'){
       if(entry.status==='archived')throw new InputError('Restore this registration before editing.',409);
@@ -150,6 +155,7 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
       if(entry.status==='archived')throw new InputError('Restore this registration before changing teams.',409);
       if(b.expectedTeamId!==entry.teamId)throw new InputError('Team changed. Refresh before editing.',409);
       const team=getTeam(text(b.teamId,'Team'));
+      if(scopeClub&&team.club!==scopeClub)throw new InputError('Only the super administrator can transfer players between clubs.',403);
       if(team.id===entry.teamId)throw new InputError('Choose a different team.');
       const name=entry.firstName+' '+entry.lastName;
       if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=? AND id<>?').get(name,team.club,team.ageGroup,entry.statsPlayerId||''))throw new InputError('A player with this name already exists in the destination. Review the duplicate before moving.',409);
@@ -169,7 +175,7 @@ export function setupLeague({db,root,clubs,InputError,json,text,integer,email,ra
     });json(res,200,{ok:true});return true;
    }
    if(/^\/api\/admin\/league-entries\/[^/]+\/review$/.test(path)&&req.method==='POST'){
-    const id=path.split('/')[4],b=await body(req),entry=db.prepare('SELECT * FROM league_entries WHERE id=?').get(id);if(!entry)throw new InputError('Registration not found.',404);if(entry.status!=='pending')throw new InputError('This registration has already been reviewed. Refresh the list.',409);
+    const id=path.split('/')[4],b=await body(req),entry=db.prepare('SELECT * FROM league_entries WHERE id=?').get(id);if(!entry||!inScope(entry))throw new InputError('Registration not found.',404);if(entry.status!=='pending')throw new InputError('This registration has already been reviewed. Refresh the list.',409);
     if(b.status==='approved'&&b.verified!==true)throw new InputError('Confirm guardian identity and club roster before approval.');
     if(!['approved','rejected'].includes(b.status))throw new InputError('Choose approve or decline.');const note=text(b.note??'','Review note',1000,false),team=getTeam(entry.teamId);let statsId=null;
     transaction(()=>{

@@ -1,5 +1,7 @@
 import http from 'node:http';
 import { setupLeague } from './league.mjs';
+import { setupClubAccess } from './club-access.mjs';
+import { setupCoachTools } from './coach-tools.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -60,6 +62,8 @@ async function body(req){if(!req.headers['content-type']?.startsWith('applicatio
 function validateStats(p){if(!clubs.includes(p.club))throw new InputError('Choose a league club.');if(!['U10','U13'].includes(p.ageGroup))throw new InputError('Choose U10 or U13.');return{name:text(p.name,'Player name'),club:p.club,ageGroup:p.ageGroup,goals:integer(p.goals,'Goals',0,10000),assists:integer(p.assists,'Assists',0,10000),cleanSheets:integer(p.cleanSheets,'Clean sheets',0,1000)}}
 const allPlayers=()=>db.prepare("SELECT * FROM players WHERE id NOT IN (SELECT statsPlayerId FROM league_entries WHERE status='archived' AND statsPlayerId IS NOT NULL) ORDER BY name COLLATE NOCASE").all();
 const league=setupLeague({db,root,clubs,InputError,json,text,integer,email,rate,body,cookieSecure});
+const clubAccess=setupClubAccess({db,clubs,InputError,json,text,integer,rate,body,cookieSecure,requireAdmin});
+const coachTools=setupCoachTools({db,InputError,json,text,integer,body});
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Content-Security-Policy',csp);
  try{
@@ -70,6 +74,38 @@ const server=http.createServer(async(req,res)=>{
   }
   if(path==='/health'&&req.method==='GET')return json(res,200,{ok:true});
   if(path==='/api/stats'&&req.method==='GET')return json(res,200,{season:'2026/27',players:league.publicPlayers(allPlayers())});
+  if(await clubAccess.handle(req,res,path))return;
+  if(path.startsWith('/api/admin/coach/')){
+   requireAdmin(req);if(await coachTools.handle(req,res,path.replace('/api/admin/coach/','/api/coach/')))return;
+  }
+  if(path.startsWith('/api/club/')){
+   const account=clubAccess.requireClub(req),club=account.club;
+   if(path.startsWith('/api/club/coach/')){
+    if(club!=='Prairie Sky FC')throw new InputError('Coach Tools is available only for Prairie Sky FC.',403);
+    if(await coachTools.handle(req,res,path.replace('/api/club/coach/','/api/coach/')))return;
+   }
+   if(path.startsWith('/api/club/league-')){
+    if(await league.handle(req,res,path.replace('/api/club/','/api/admin/'),()=>account,{club}))return;
+   }
+   if(path==='/api/club/players'&&req.method==='GET')return json(res,200,{players:allPlayers().filter(p=>p.club===club)});
+   if(path==='/api/club/players'&&req.method==='POST'){
+    const b=await body(req);if(b.club!==club)throw new InputError('You can manage only your own club.',403);
+    const p=validateStats(b),id=randomUUID();
+    if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=?').get(p.name,club,p.ageGroup))throw new InputError('This player already exists. Edit the existing record.',409);
+    db.prepare('INSERT INTO players VALUES(?,?,?,?,?,?,?,1)').run(id,p.name,club,p.ageGroup,p.goals,p.assists,p.cleanSheets);
+    return json(res,201,{player:db.prepare('SELECT * FROM players WHERE id=?').get(id)});
+   }
+   if(/^\/api\/club\/players\/[^/]+$/.test(path)&&req.method==='PUT'){
+    const id=path.split('/').at(-1),existing=db.prepare('SELECT * FROM players WHERE id=? AND club=?').get(id,club);
+    if(!existing)throw new InputError('Player not found.',404);
+    const b=await body(req);if(b.club!==club)throw new InputError('You can manage only your own club.',403);
+    const p=validateStats(b);integer(b.version,'Version',1,Number.MAX_SAFE_INTEGER);league.protectStatsIdentity(id,p);
+    if(db.prepare('SELECT id FROM players WHERE lower(name)=lower(?) AND club=? AND ageGroup=? AND id<>?').get(p.name,club,p.ageGroup,id))throw new InputError('This player already exists.',409);
+    if(!db.prepare('UPDATE players SET name=?,ageGroup=?,goals=?,assists=?,cleanSheets=?,version=version+1 WHERE id=? AND club=? AND version=?').run(p.name,p.ageGroup,p.goals,p.assists,p.cleanSheets,id,club,b.version).changes)throw new InputError('Player changed. Refresh before saving.',409);
+    return json(res,200,{player:db.prepare('SELECT * FROM players WHERE id=?').get(id)});
+   }
+   throw new InputError('Endpoint not found.',404);
+  }
   if(await league.handle(req,res,path,requireAdmin))return;
   if(path==='/api/register'&&req.method==='POST'){
    rate(req,'register',15,60*60*1000);const b=await body(req);let payload;
@@ -93,7 +129,7 @@ const server=http.createServer(async(req,res)=>{
   }
   if(path.startsWith('/api/admin/')){
    requireAdmin(req);
-   if(path==='/api/admin/session'&&req.method==='GET')return json(res,200,{ok:true});
+   if(path==='/api/admin/session'&&req.method==='GET')return json(res,200,{ok:true,role:'superadmin',coachTools:true});
    if(path==='/api/admin/logout'&&req.method==='POST'){const s=session(req);sessions.delete(s.key);res.setHeader('Set-Cookie',`sjl_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${cookieSecure?'; Secure':''}`);return json(res,200,{ok:true})}
    if(path==='/api/admin/registrations'&&req.method==='GET')return json(res,200,{registrations:db.prepare('SELECT r.*,a.archivedAt FROM registrations r LEFT JOIN registration_archives a ON a.registrationId=r.id WHERE '+(new URL(req.url,'http://localhost').searchParams.get('archived')==='true'?'a.registrationId IS NOT NULL':'a.registrationId IS NULL')+' ORDER BY r.createdAt DESC').all().map(r=>({...r,payload:JSON.parse(r.payload)}))});
    if(/^\/api\/admin\/registrations\/[^/]+\/archive$/.test(path)&&req.method==='PUT'){
@@ -125,6 +161,7 @@ const server=http.createServer(async(req,res)=>{
   else if(['/registration-player','/registration-player/','/league-register','/league-register/'].includes(path))file=join(root,'league-register.html');
   else if(path==='/parent'||path==='/parent/')file=join(root,'parent.html');
   else if(path==='/admin'||path==='/admin/'||path==='/admin.html')file=join(root,'admin.html');
+  else if(path==='/club'||path==='/club/')file=join(root,'admin.html');
   else if(/^\/assets\/[a-zA-Z0-9_-]+\.(jpg|png|svg|css|js|json)$/.test(path)&&path!=='/assets/player-stats.json')file=join(root,path);
   else throw new InputError('Page not found.',404);
   let bytes;try{if(!statSync(file).isFile())throw Error();bytes=readFileSync(file)}catch{throw new InputError('Page not found.',404)}
