@@ -20,6 +20,27 @@ Concurrent updates use row versions. If another administrator changed the record
 
 The **Registrations** tab displays club and player applications and their contact details. The public API never returns application data. The initial statistics seed is intentionally empty. `assets/player-stats.json` is imported once when a new database is initialized; subsequent edits must use the dashboard.
 
+## Club access and private coaching tools
+
+`/admin` remains the league-wide **Super Admin** portal, using the existing administrator password. In **Club Access**, enable one account for each of the six existing clubs and set its password (16–128 characters). Accounts start disabled with no default password. Share each club's password privately. Saving access settings, disabling an account or resetting its password revokes all sessions for that club. Version checks prevent overwriting another administrator's account change.
+
+Club managers sign in at `/club`. They can create/edit their own season-statistics rows, review their own player applications, correct names, archive/restore registrations and move players between their own teams/age groups. Only Super Admin can transfer a player to a different club, read general league interest registrations, configure league email or manage club credentials. API authorization derives ownership from the authenticated session and stored player/team records. Club responses omit signatures, policy history, account identifiers and email-delivery details. Parent contact details are shown only where sharing with the selected club was acknowledged.
+
+Club credentials use independent salted scrypt hashes. Club sessions use hashed random tokens in SQLite, HttpOnly/SameSite cookies and Secure cookies in production, with an eight-hour expiry. They survive application restart; parent and super-admin credentials/sessions retain their existing behavior.
+
+**Coach Tools** is available to Prairie Sky FC and Super Admin only. Create a dated U10/U13 match or training session, then evaluate the existing approved registrations in that team. No player names are imported or duplicated from the supplied roster posters. Choose a role, record actions using counters or numeric inputs, add notes and explicitly **Save Evaluation**. The tool warns before discarding an unsaved player evaluation. Sessions and evaluations persist in the existing database; optimistic row versions prevent overwriting a concurrent coach's changes. CSV export contains saved evaluations for the selected session.
+
+Targets are saved separately for each new coaching session, preserving historical scoring:
+
+- Forward: default 3 goals **OR** 3 assists. Optional modes require both targets or 3 combined goals + assists.
+- Winger: 2 duels won and 4 completed passes, each worth half the rating. Excess on one task cannot compensate for the other.
+- Defender: 5 duels won.
+- Goalkeeper: notes only until goalkeeper tasks are defined.
+
+Rating equals capped task completion × 10, rounded to one decimal. A player without a saved evaluation is not scored. Earlier observations remain readable when the roster changes, using the saved name; saving is allowed only for players currently approved in the session's club/division. Coach evaluations do not change public league totals and are never included in public rosters, parent profiles or public statistics.
+
+Run `npm test` for club ownership boundaries, credential reset/revocation, restart persistence, concurrent edits and scoring modes. Browser interaction checks require a locally available Playwright Chromium browser; a screenshot-based review has not yet been completed in the authoring environment.
+
 ## Schedule
 
 `assets/schedule.json` contains 14 dates and 42 matches, October 25, 2026 through January 31, 2027, 19:30–20:30 Winnipeg time, two U10 fields and one U13 field. The original workbook omitted YFC; the corrected fixtures include YFC in both divisions. U10 has six teams playing 9–10 games each, with every pairing occurring once or twice. U13 has four teams playing seven games each, with every pairing occurring two or three times. Shakhtar U13 rests on October 25. Dates, times and field capacity are unchanged. Home/away totals differ by at most one per team, no team plays twice on a matchday, and no team has three consecutive byes except Prairie Sky U10 on Dec 20 / Jan 3 / Jan 10 after the organizer-requested opening fixture swap. Prairie Sky U10 vs Birds now plays Oct 25; Dynamo vs Birds takes Jan 3. Club names in the UI are normalized to the member-club names; fixtures retain source aliases (including YFC).

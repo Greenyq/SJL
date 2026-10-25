@@ -1,0 +1,35 @@
+/* Operate surface: inherit SJL navy/yellow and the existing admin typography. */
+.admin-tabs{flex-wrap:wrap}.admin-tabs .tab{min-height:48px;line-height:1.3}
+#access-panel>h2,#coach-panel>h2{font:800 2.4rem 'Barlow Condensed',Arial,sans-serif;margin:0 0 12px}
+#access-panel a{color:#ffd21e;text-decoration:underline;text-underline-offset:3px}
+.access-row{padding:28px 0;border-bottom:1px solid #506798;max-width:680px}
+.access-row h3{font:700 1.5rem 'Barlow Condensed',Arial,sans-serif;margin:0}
+.access-row p{margin:0}.access-row .access-check{display:flex;align-items:center;gap:12px}
+.access-row .access-check input{width:22px;min-height:22px;margin:0;accent-color:#ffd21e}
+.access-row button{justify-self:start}
+#coach-app{margin-top:28px}.coach-toolbar{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.coach-toolbar label{flex:1;min-width:220px;font-weight:700}.coach-toolbar select{width:100%}
+.coach-new{margin:24px 0;border-block:1px solid #506798;padding:20px 0}
+.coach-new summary{cursor:pointer;font-weight:700;min-height:30px}.coach-new form{padding-top:20px}
+.coach-new .admin-form>details{border-top:1px solid #506798;padding-top:16px}
+.coach-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.coach-form-grid label{font-weight:600}.coach-new .primary{justify-self:start}
+.coach-workspace{display:grid;grid-template-columns:minmax(220px,1fr) minmax(0,2fr);gap:32px;margin-top:24px;align-items:start}
+.coach-roster{display:flex;flex-direction:column;gap:4px;max-height:700px;overflow:auto;scrollbar-color:#7184ac #07133d}
+.coach-player{display:flex;flex-direction:column;align-items:start;gap:6px;width:100%;padding:14px 16px;background:transparent;color:#fff;border:1px solid transparent;border-bottom-color:#506798;border-radius:8px;text-align:left;min-height:72px}
+.coach-player[aria-pressed=true]{background:#203a72;border-color:#ffd21e}.coach-player small{color:#d0d9ed;font-size:.875rem}
+.coach-player:hover{background:#203a72}.coach-player span{font-weight:700;overflow-wrap:anywhere}
+.coach-editor{background:#0c205c;border:1px solid #506798;border-radius:14px;padding:28px;min-width:0}
+.coach-editor:empty{display:none}.coach-editor h3{font:800 2rem 'Barlow Condensed',Arial,sans-serif;margin:0 0 24px}
+.coach-editor .coach-target{margin:0}.coach-rating{font-size:1.25rem;font-weight:800;color:#ffd21e;font-variant-numeric:tabular-nums;line-height:1.5}
+.coach-counters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.coach-counter>span{font-weight:700;display:block;margin-bottom:8px}
+.coach-counter-controls{display:grid;grid-template-columns:48px minmax(55px,1fr) 48px;gap:8px;align-items:center}
+.coach-counter-controls input{margin:0;text-align:center;padding:10px 2px;min-width:0;font-variant-numeric:tabular-nums}
+.coach-step{width:48px!important;height:50px;min-height:50px!important;border-radius:8px!important;padding:0!important;display:grid;place-items:center;font-size:1.5rem!important;line-height:1!important}
+#coach-app button:not(.coach-player):not(.coach-step),#access-panel button{min-height:48px;line-height:1.3}
+#coach-app button:focus-visible,#access-panel button:focus-visible,#coach-app summary:focus-visible{outline:3px solid #ffd21e;outline-offset:4px}
+#coach-app ::selection,#access-panel ::selection{background:#ffd21e;color:#07112d}
+#coach-app input,#coach-app textarea,#access-panel input{caret-color:#07112d}
+@media(max-width:900px){.coach-counters{grid-template-columns:1fr}.coach-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.coach-workspace{grid-template-columns:1fr;gap:24px}.coach-roster{max-height:260px}.coach-editor{padding:20px}.coach-toolbar label{flex-basis:100%}.coach-form-grid{grid-template-columns:1fr}.coach-counters{grid-template-columns:1fr}.coach-toolbar button{flex:1}.coach-rating{font-size:1.125rem}.coach-player{min-height:68px}.admin-main{padding-top:28px}}
