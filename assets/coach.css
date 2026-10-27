@@ -33,3 +33,19 @@
 #coach-app input,#coach-app textarea,#access-panel input{caret-color:#07112d}
 @media(max-width:900px){.coach-counters{grid-template-columns:1fr}.coach-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.coach-workspace{grid-template-columns:1fr;gap:24px}.coach-roster{max-height:260px}.coach-editor{padding:20px}.coach-toolbar label{flex-basis:100%}.coach-form-grid{grid-template-columns:1fr}.coach-counters{grid-template-columns:1fr}.coach-toolbar button{flex:1}.coach-rating{font-size:1.125rem}.coach-player{min-height:68px}.admin-main{padding-top:28px}}
+/* Match entry uses the same compact navy/yellow management surface. */
+#matches-panel>h2{font:800 2.4rem 'Barlow Condensed',Arial,sans-serif;margin:0 0 12px}
+#matches-panel>p{max-width:72ch;line-height:1.6}
+.match-stat-filters{display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin:24px 0}
+.match-stat-filters label{display:grid;gap:8px;font-weight:700;min-width:100px}
+.match-stat-filters label:nth-child(2){flex:2;min-width:240px}.match-stat-filters label:nth-child(3){flex:1;min-width:200px}
+.match-stat-filters select{width:100%;min-height:48px}
+.match-stat-row{display:grid;grid-template-columns:minmax(160px,1fr) 100px 100px auto;gap:16px;align-items:center;padding:20px 0;border-bottom:1px solid #506798}
+.match-stat-name{display:grid;gap:8px;overflow-wrap:anywhere}.match-stat-name small{color:#d0d9ed;font-variant-numeric:tabular-nums}
+.match-stat-row label{display:grid;gap:8px;font-weight:700}.match-stat-row input{width:100%;min-height:48px;font-variant-numeric:tabular-nums;caret-color:#07112d}
+.match-stat-row .form-feedback{grid-column:1/-1;margin:0}.match-stat-row .form-feedback:empty{display:none}
+#matches-panel button,.access-password-tools button{min-height:48px}
+#matches-panel button:focus-visible,#matches-panel select:focus-visible,#matches-panel input:focus-visible{outline:3px solid #ffd21e;outline-offset:3px}
+#matches-panel ::selection{background:#ffd21e;color:#07112d}
+.access-password-tools{display:flex;flex-wrap:wrap;gap:12px}
+@media(max-width:680px){.match-stat-row{grid-template-columns:1fr 1fr}.match-stat-name{grid-column:1/-1}.match-stat-row button{grid-column:1/-1;width:100%}.match-stat-filters{display:grid;grid-template-columns:1fr}.match-stat-filters label:nth-child(n){min-width:0}.match-stat-filters button{width:100%}}

@@ -51,7 +51,9 @@ test('schedule includes every division team fairly with no field or team conflic
    for(let i=0;i<dates.length-2;i++){
     // Requested Birds fixture swap moves Prairie Sky's Jan 3 game to Oct 25.
     const openingSwapBye=age==='U10'&&team==='Prairie Sky FC'&&dates[i]==='2026-12-20';
-    if(!openingSwapBye)assert.ok(played.some(m=>dates.slice(i,i+3).includes(m.date)),`${age} ${team}: three consecutive byes`);
+    // Birds/YFC requested Nov 8 off; their fixtures now play Nov 1.
+    const requestedYfcBye=age==='U10'&&team==='YFC'&&dates[i]==='2026-11-08';
+    if(!openingSwapBye&&!requestedYfcBye)assert.ok(played.some(m=>dates.slice(i,i+3).includes(m.date)),`${age} ${team}: three consecutive byes`);
    }
    for(const opponent of teams.filter(t=>t!==team)){
     const count=played.filter(m=>m.home===opponent||m.away===opponent).length;
@@ -100,4 +102,9 @@ test('preserves registrations/statistics across restart and invalidates sessions
 });
 test('production refuses startup without durable data/password configuration',async()=>{
  const processChild=spawn(process.execPath,['server.mjs'],{cwd:new URL('../',import.meta.url),env:{...process.env,NODE_ENV:'production',ADMIN_PASSWORD:'',DATA_DIR:''},stdio:'ignore'});const[code]=await once(processChild,'exit');assert.notEqual(code,0);
+});
+
+test('Birds and YFC play November 1 and rest November 8 after organizer swap',async()=>{
+ const {matches}=await(await fetch(base+'/assets/schedule.json')).json();
+ for(const club of ['YFC','Birds']){assert.ok(matches.some(m=>m.date==='2026-11-01'&&m.ageGroup==='U10'&&[m.home,m.away].includes(club)));assert.ok(!matches.some(m=>m.date==='2026-11-08'&&m.ageGroup==='U10'&&[m.home,m.away].includes(club)));}
 });

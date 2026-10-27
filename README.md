@@ -112,3 +112,11 @@ The **League Roster** admin view opens with **Awaiting approval** selected. Filt
 Click any member-club card on the homepage to open its roster and season statistics, with U10/U13 tabs and a link to that club's schedule. Prairie Sky's external website remains available through a separate link. `/api/league/rosters` returns only approved registrations on active teams with public-statistics permission, using an explicit allowlist of name and season totals. Pending, declined, nonconsenting and unlinked statistics-only records are excluded. No parent details, birth year, signature or permission history are sent to public pages. Withdrawal hides the player on the next roster request.
 
 On startup, newly scheduled club/age pairs are added to registration without duplicating existing teams or reactivating disabled teams. Existing registrations, accounts and statistics remain intact.
+
+### Match goals and assists
+
+Super Admin and every club portal have a **Match Stats** tab. Choose U10/U13, a fixture and (Super Admin only) a participating club. Record each player's goals and assists and save that player. Season totals change by the difference from that player's previous saved contribution for the same fixture. Repeated saves do not double-count. Existing manually entered season totals are preserved: reconcile those totals before entering a match already included in them. Concurrent match/season edits require refreshing rather than overwriting. Reports persist in SQLite and do not expose private roster data publicly; public and parent statistics continue to use the existing consent rules. Club authorization uses the authenticated club and stored player ownership, including on shared fixtures.
+
+**Club Access** provides a cryptographic password generator and show/hide control for each club. Generate, privately copy, enable and save the individual club account. Passwords are not stored in source code; only salted hashes are saved. No credentials are emailed automatically. The public navigation links to `/club`.
+
+The organizer-requested November 1/8 U10 swap brings Prairie Sky–YFC and Birds–Shakhtar to November 1, and moves Shakhtar–Prairie Sky and Dynamo–Green Strikers to November 8. U13 and game counts are unchanged. This gives YFC three consecutive U10 byes on November 8/15/22. The schedule JSON revalidates on every request.

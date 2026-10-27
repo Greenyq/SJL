@@ -49,13 +49,24 @@ window.SJL_PORTAL = {
         enabledLabel.append(enabled, document.createTextNode('Enable this club login'));
         const save = document.createElement('button'); save.type = 'submit'; save.className = 'primary'; save.textContent = 'SAVE CLUB ACCESS';
         const feedback = document.createElement('p'); feedback.setAttribute('role','status'); feedback.className = 'form-feedback';
-        form.append(title,state,label,enabledLabel,save,feedback);
+        const tools=document.createElement('div'); tools.className='access-password-tools';
+        const generate=document.createElement('button'); generate.type='button';generate.className='secondary';generate.textContent='GENERATE PASSWORD';
+        const show=document.createElement('button');show.type='button';show.className='secondary';show.textContent='SHOW PASSWORD';show.setAttribute('aria-pressed','false');
+        generate.addEventListener('click',()=>{
+          const bytes=crypto.getRandomValues(new Uint8Array(18));
+          password.value=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+          password.type='text';show.textContent='HIDE PASSWORD';show.setAttribute('aria-pressed','true');
+          feedback.textContent='New password generated. Copy it privately, enable this club, then save.';feedback.classList.remove('error');
+        });
+        show.addEventListener('click',()=>{const visible=password.type==='password';password.type=visible?'text':'password';show.textContent=visible?'HIDE PASSWORD':'SHOW PASSWORD';show.setAttribute('aria-pressed',String(visible));});
+        tools.append(generate,show);
+        form.append(title,state,label,tools,enabledLabel,save,feedback);
         form.addEventListener('submit', async event => {
           event.preventDefault(); save.disabled = true; feedback.textContent = 'Saving…';
           try {
             const r = await fetch('/api/admin/club-accounts/password', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({club:account.club,password:password.value,enabled:enabled.checked,version:account.version}) });
             const data = await r.json(); if (!r.ok) throw Error(data.error || 'Unable to save club access.');
-            account.version++; password.value = ''; state.textContent = enabled.checked ? 'Access enabled' : 'Access disabled';
+            account.version++; password.value = ''; password.type='password';show.textContent='SHOW PASSWORD';show.setAttribute('aria-pressed','false'); state.textContent = enabled.checked ? 'Access enabled' : 'Access disabled';
             feedback.textContent = 'Saved. Previous club sessions have been signed out.'; feedback.classList.remove('error');
           } catch (e) { feedback.textContent = e.message; feedback.classList.add('error'); }
           finally { save.disabled = false; }

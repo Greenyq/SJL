@@ -2,6 +2,7 @@ import http from 'node:http';
 import { setupLeague } from './league.mjs';
 import { setupClubAccess } from './club-access.mjs';
 import { setupCoachTools } from './coach-tools.mjs';
+import { setupMatchStats } from './match-stats.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, statSync } from 'node:fs';
@@ -64,6 +65,7 @@ const allPlayers=()=>db.prepare("SELECT * FROM players WHERE id NOT IN (SELECT s
 const league=setupLeague({db,root,clubs,InputError,json,text,integer,email,rate,body,cookieSecure});
 const clubAccess=setupClubAccess({db,clubs,InputError,json,text,integer,rate,body,cookieSecure,requireAdmin});
 const coachTools=setupCoachTools({db,InputError,json,text,integer,body});
+const matchStats=setupMatchStats({db,root,clubs,InputError,json,integer,body});
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Content-Security-Policy',csp);
  try{
@@ -80,6 +82,9 @@ const server=http.createServer(async(req,res)=>{
   }
   if(path.startsWith('/api/club/')){
    const account=clubAccess.requireClub(req),club=account.club;
+   if(path.startsWith('/api/club/match-stats')){
+    if(await matchStats.handle(req,res,path.replace('/api/club/','/api/'),club))return;
+   }
    if(path.startsWith('/api/club/coach/')){
     if(club!=='Prairie Sky FC')throw new InputError('Coach Tools is available only for Prairie Sky FC.',403);
     if(await coachTools.handle(req,res,path.replace('/api/club/coach/','/api/coach/')))return;
@@ -129,6 +134,9 @@ const server=http.createServer(async(req,res)=>{
   }
   if(path.startsWith('/api/admin/')){
    requireAdmin(req);
+   if(path.startsWith('/api/admin/match-stats')){
+    if(await matchStats.handle(req,res,path.replace('/api/admin/','/api/')))return;
+   }
    if(path==='/api/admin/session'&&req.method==='GET')return json(res,200,{ok:true,role:'superadmin',coachTools:true});
    if(path==='/api/admin/logout'&&req.method==='POST'){const s=session(req);sessions.delete(s.key);res.setHeader('Set-Cookie',`sjl_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${cookieSecure?'; Secure':''}`);return json(res,200,{ok:true})}
    if(path==='/api/admin/registrations'&&req.method==='GET')return json(res,200,{registrations:db.prepare('SELECT r.*,a.archivedAt FROM registrations r LEFT JOIN registration_archives a ON a.registrationId=r.id WHERE '+(new URL(req.url,'http://localhost').searchParams.get('archived')==='true'?'a.registrationId IS NOT NULL':'a.registrationId IS NULL')+' ORDER BY r.createdAt DESC').all().map(r=>({...r,payload:JSON.parse(r.payload)}))});
@@ -165,7 +173,7 @@ const server=http.createServer(async(req,res)=>{
   else if(/^\/assets\/[a-zA-Z0-9_-]+\.(jpg|png|svg|css|js|json)$/.test(path)&&path!=='/assets/player-stats.json')file=join(root,path);
   else throw new InputError('Page not found.',404);
   let bytes;try{if(!statSync(file).isFile())throw Error();bytes=readFileSync(file)}catch{throw new InputError('Page not found.',404)}
-  res.writeHead(200,{'Content-Type':types[extname(file)]||'application/octet-stream','Cache-Control':extname(file)==='.html'?'no-cache':'public, max-age=300'});res.end(req.method==='HEAD'?undefined:bytes);
+  res.writeHead(200,{'Content-Type':types[extname(file)]||'application/octet-stream','Cache-Control':extname(file)==='.html'||path==='/assets/schedule.json'?'no-cache':'public, max-age=300'});res.end(req.method==='HEAD'?undefined:bytes);
  }catch(e){if(!(e instanceof InputError))console.error('Request failed:',e.message);json(res,e.status||500,{error:e.status?e.message:'Unable to complete the request. Please try again.'})}
 });
 server.listen(Number(process.env.PORT||3000),'0.0.0.0',()=>console.log(`SJL listening on port ${server.address().port}`));
