@@ -40,8 +40,8 @@
       "end": "20:30",
       "ageGroup": "U10",
       "field": 1,
-      "home": "Shakhtar Academy Winnipeg",
-      "away": "Prairie Sky FC"
+      "home": "Prairie Sky FC",
+      "away": "YFC"
     },
     {
       "id": "2026-11-01-2",
@@ -50,8 +50,8 @@
       "end": "20:30",
       "ageGroup": "U10",
       "field": 2,
-      "home": "Dynamo",
-      "away": "Green Strikers"
+      "home": "Birds",
+      "away": "Shakhtar Academy Winnipeg"
     },
     {
       "id": "2026-11-01-3",
@@ -70,8 +70,8 @@
       "end": "20:30",
       "ageGroup": "U10",
       "field": 1,
-      "home": "Prairie Sky FC",
-      "away": "YFC"
+      "home": "Shakhtar Academy Winnipeg",
+      "away": "Prairie Sky FC"
     },
     {
       "id": "2026-11-08-2",
@@ -80,8 +80,8 @@
       "end": "20:30",
       "ageGroup": "U10",
       "field": 2,
-      "home": "Birds",
-      "away": "Shakhtar Academy Winnipeg"
+      "home": "Dynamo",
+      "away": "Green Strikers"
     },
     {
       "id": "2026-11-08-3",
