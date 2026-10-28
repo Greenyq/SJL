@@ -214,3 +214,5 @@ footer{padding-block:36px;background:#040b27;border-top:1px solid var(--line)}
  .footer-contact{font-size:.875rem}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+.match-score{margin-left:auto;padding-left:12px;font:800 2rem/1.2 'Barlow Condensed',Arial,sans-serif;font-variant-numeric:tabular-nums;color:var(--ink);flex-shrink:0}

@@ -11,7 +11,10 @@
       "ageGroup": "U10",
       "field": 1,
       "home": "Prairie Sky FC",
-      "away": "Birds"
+      "away": "Birds",
+      "homeScore": 9,
+      "awayScore": 5,
+      "status": "final"
     },
     {
       "id": "2026-10-25-2",
@@ -21,7 +24,10 @@
       "ageGroup": "U10",
       "field": 2,
       "home": "Shakhtar Academy Winnipeg",
-      "away": "Green Strikers"
+      "away": "Green Strikers",
+      "homeScore": 5,
+      "awayScore": 5,
+      "status": "final"
     },
     {
       "id": "2026-10-25-3",
@@ -31,7 +37,10 @@
       "ageGroup": "U13",
       "field": 3,
       "home": "Prairie Sky FC",
-      "away": "YFC"
+      "away": "YFC",
+      "homeScore": 1,
+      "awayScore": 3,
+      "status": "final"
     },
     {
       "id": "2026-11-01-1",
