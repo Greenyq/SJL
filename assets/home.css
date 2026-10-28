@@ -79,14 +79,31 @@ section[id]{scroll-margin-top:16px}
 .member .member-website{border-top:1px solid var(--line);padding:12px 22px;font-size:.8125rem;color:var(--muted);text-decoration:underline}
 .member .member-website:hover{color:var(--yellow)}
 #highlights{border-top:1px solid var(--line)}
-.video-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:18px}
-.video-card{position:relative;min-height:320px;border-radius:var(--radius);overflow:hidden;padding:24px;display:flex;flex-direction:column;justify-content:space-between;gap:48px;background-color:var(--navy2);background-image:linear-gradient(180deg,#07133d33,#040b27 100%),var(--poster);background-size:cover;background-position:center;border:1px solid var(--line)}
-.video-card:hover{border-color:var(--yellow)}
-.video-label{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.6875rem;font-weight:700;letter-spacing:.05em;line-height:1.5}
-.video-label span{background:var(--navy);padding:6px 8px;border-radius:4px}
-.play{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--yellow);color:var(--ink)}
-.video-card h3{font:700 2rem/1.1 'Barlow Condensed',Arial,sans-serif;margin:16px 0 8px}
-.video-card p{font-size:.875rem;line-height:1.6;color:var(--muted);margin:0}
+/* Match video links preserve the original club marks and open Instagram. */
+.match-video-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.match-video{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--navy2);text-decoration:none;color:#fff}
+.match-video-art{display:grid;grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);align-items:center;gap:14px;padding:28px 20px;background:#040b25;min-height:196px}
+.video-club-logo{display:grid;place-items:center;aspect-ratio:1;min-width:0;overflow:hidden;background:#000;border-radius:8px}
+.video-club-logo img{display:block;width:100%;height:100%;object-fit:contain}
+.video-club-logo.birds-academy{background:#343532}
+.video-club-logo.shakhtar{background:#ff6500}
+.video-club-logo.shakhtar img{transform:scale(2.8)}
+.match-video-play{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--yellow);color:var(--ink);transition:transform .18s ease}
+.match-video-play svg{width:24px;height:24px}
+.match-video-info{display:flex;flex-direction:column;align-items:start;flex:1;padding:24px}
+.match-video-meta{margin:0;color:#c5d0e7;font-size:.8125rem;line-height:1.5;font-variant-numeric:tabular-nums}
+.match-video-meta span{margin-inline:4px}
+.match-video h3{font:700 1.875rem/1.15 'Barlow Condensed',Arial,sans-serif;margin:16px 0 24px;overflow-wrap:anywhere}
+.match-video-vs{display:block;font:600 .875rem/1.5 Archivo,Arial,sans-serif;color:#b7c5e0;margin:5px 0}
+.match-video-watch{display:flex;align-items:center;gap:8px;margin-top:auto;color:var(--yellow);font-size:.875rem;line-height:1.5;font-weight:700;min-height:32px}
+.match-video-watch svg{width:20px;height:20px;flex-shrink:0}
+.match-video:hover{border-color:var(--yellow)}
+.match-video:hover .match-video-play{transform:scale(1.08)}
+.match-video:focus-visible{outline:3px solid var(--yellow);outline-offset:5px}
+.match-video ::selection{background:var(--yellow);color:var(--ink)}
+@media(max-width:1000px) and (min-width:761px){.match-video-art{grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr);gap:8px;padding:24px 14px;min-height:156px}.match-video-play{width:36px;height:36px}.match-video-info{padding:20px}.match-video h3{font-size:1.625rem}}
+@media(max-width:760px){.match-video-grid{grid-template-columns:1fr}.match-video-art{padding:28px 24px;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);min-height:190px}.video-club-logo{width:100%;max-width:160px;justify-self:center}.match-video-play{width:48px;height:48px}.match-video h3{font-size:2rem}.match-video-info{padding:24px}}
+@media(prefers-reduced-motion:reduce){.match-video-play{transition:none}.match-video:hover .match-video-play{transform:none}}
 .stats-section{background:var(--navy2);border-top:1px solid var(--line)}
 .stats-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:28px 0}
 .tabs{display:flex;gap:8px;flex-wrap:wrap}
