@@ -40,12 +40,23 @@ const categories = [
     document.querySelectorAll('[data-age]').forEach(tab=>tab.addEventListener('click',()=>{selectedAge=tab.dataset.age;document.querySelectorAll('[data-age]').forEach(t=>{const active=t===tab;t.classList.toggle('active',active);t.setAttribute('aria-pressed',String(active))});renderLeaders()}));
     renderLeaders();
     fetch('/api/stats').then(response=>{if(!response.ok)throw new Error('Statistics unavailable');return response.json()}).then(data=>{if(!Array.isArray(data.players))throw new Error('Invalid statistics');players=data.players.filter(p=>p&&typeof p.name==='string'&&typeof p.club==='string');renderLeaders()}).catch(()=>{statsFailed=true;renderLeaders()});
-    const menu=document.querySelector('.menu'),links=document.querySelector('.links');
-function closeMenu(){links.classList.remove('is-open');menu.setAttribute('aria-expanded','false');menu.setAttribute('aria-label','Open menu')}
-menu.addEventListener('click',()=>{const open=links.classList.toggle('is-open');menu.setAttribute('aria-expanded',String(open));menu.setAttribute('aria-label',open?'Close menu':'Open menu')});
+const menu=document.querySelector('.menu'),links=document.querySelector('.links');
+const navDropdowns=[...document.querySelectorAll('.nav-dropdown')];
+function closeDropdowns(except=null){navDropdowns.forEach(dropdown=>{if(dropdown!==except)dropdown.open=false})}
+function closeMenu(){links.classList.remove('is-open');menu.setAttribute('aria-expanded','false');menu.setAttribute('aria-label','Open menu');closeDropdowns()}
+menu.addEventListener('click',()=>{const open=!links.classList.contains('is-open');closeDropdowns();links.classList.toggle('is-open',open);menu.setAttribute('aria-expanded',String(open));menu.setAttribute('aria-label',open?'Close menu':'Open menu')});
+navDropdowns.forEach(dropdown=>dropdown.querySelector('summary').addEventListener('click',()=>{if(!dropdown.open)closeDropdowns(dropdown)}));
 links.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMenu));
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&links.classList.contains('is-open')){closeMenu();menu.focus()}});
-document.addEventListener('click',event=>{if(!event.target.closest('.nav'))closeMenu()});
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape')return;
+ const open=navDropdowns.find(dropdown=>dropdown.open);
+ if(open){event.preventDefault();closeDropdowns();open.querySelector('summary').focus();return}
+ if(links.classList.contains('is-open')){closeMenu();menu.focus()}
+});
+document.addEventListener('click',event=>{
+ navDropdowns.forEach(dropdown=>{if(!dropdown.contains(event.target))dropdown.open=false});
+ if(!event.target.closest('.nav'))closeMenu();
+});
 window.matchMedia('(min-width: 1101px)').addEventListener('change',event=>{if(event.matches)closeMenu()});
 
 const leagueClubs=[
