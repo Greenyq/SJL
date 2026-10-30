@@ -32,12 +32,14 @@ export function setupMatchStats({ db, root, clubs, InputError, json, integer, bo
       json(res, 200, { match, club, players, reports: reports.filter(r => players.some(p => p.id === r.playerId)) }); return true;
     }
     if (route[2] && req.method === 'PUT') {
+      if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='match_protocols'").get() && db.prepare('SELECT matchId FROM match_protocols WHERE matchId=?').get(match.id)) throw new InputError('This match has a referee protocol. Use /referee to edit it; the league administrator can correct a final protocol.', 409);
       const b = await body(req);
       integer(b.goals, 'Match goals', 0, 100); integer(b.assists, 'Match assists', 0, 100);
       integer(b.version, 'Match record version', 0, Number.MAX_SAFE_INTEGER);
       integer(b.playerVersion, 'Player version', 1, Number.MAX_SAFE_INTEGER);
       db.exec('BEGIN IMMEDIATE');
       try {
+        if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='match_protocols'").get() && db.prepare('SELECT matchId FROM match_protocols WHERE matchId=?').get(match.id)) throw new InputError('This match has a referee protocol. Use /referee to edit it.', 409);
         const player = db.prepare('SELECT * FROM players WHERE id=?').get(route[2]);
         if (!player || (scopeClub && player.club !== scopeClub) || player.ageGroup !== match.ageGroup || !sides(match).includes(player.club) || !eligible(player)) throw new InputError('Player not found on this match roster.', 404);
         const previous = db.prepare('SELECT * FROM match_player_stats WHERE matchId=? AND playerId=?').get(match.id, player.id);

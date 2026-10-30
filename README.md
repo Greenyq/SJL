@@ -120,3 +120,15 @@ Super Admin and every club portal have a **Match Stats** tab. Choose U10/U13, a 
 **Club Access** provides a cryptographic password generator and show/hide control for each club. Generate, privately copy, enable and save the individual club account. Passwords are not stored in source code; only salted hashes are saved. No credentials are emailed automatically. The public navigation links to `/club`.
 
 The organizer-requested November 1/8 U10 swap brings Prairie Sky–YFC and Birds–Shakhtar to November 1, and moves Shakhtar–Prairie Sky and Dynamo–Green Strikers to November 8. U13 and game counts are unchanged. This gives YFC three consecutive U10 byes on November 8/15/22. The schedule JSON revalidates on every request.
+
+## Referee match protocols
+
+Referees sign in at `/referee`. In `/admin`, open **Club Access → Referee Access** to create a named referee account with a unique username and password (16–128 characters). Accounts start only when an administrator creates them; no default credentials are shipped. The administrator's existing session can also open `/referee` to correct or reopen a final protocol.
+
+Each referee can access all scheduled matches and both eligible team rosters, without guardian contacts, consent records, club management or administrator access. Filter by matchday, age group or team. Record each player's match goals, assists, yellow cards (0–2) and red cards (0–1), plus the team scores and referee notes. Include a second-yellow dismissal in the red card count. Team scores can include own goals or unidentified scorers; explain these in notes. This is a per-player match summary, not a minute-by-minute event log.
+
+**Save draft** persists the full protocol and updates season player totals using the difference from existing match records. **Finalize match** also publishes the score through the existing schedule JSON endpoint. Final protocols are locked for referees; the administrator can correct the final record or reopen it as a draft. An existing historical fixture score remains available from the committed schedule when its protocol is reopened. Earlier manually entered season contributions must be reconciled before entering those same historical matches, as with the existing Match Stats tool.
+
+A saved referee protocol owns that match's goals/assists, so the older Match Stats editor rejects changes to it and directs administrators to `/referee`. Match versions, roster identities, player versions and existing contribution versions prevent silent overwrites; the whole save rolls back on invalid or stale input. Each successful save records the actor and full submitted summary in `protocol_audit`. All records, cards, accounts and hashed sessions use the existing persistent SQLite database. Resetting a password or disabling an account revokes that referee's sessions. Password hashes and private player registration details never reach the referee API.
+
+Run `npm test` for access isolation, validation/rollback, corrections without double counting, finalization, public scores, concurrent edits, session revocation and persistence across restarts.

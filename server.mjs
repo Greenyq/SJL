@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { setupReferee } from './referee.mjs';
 import { setupLeague } from './league.mjs';
 import { setupClubAccess } from './club-access.mjs';
 import { setupCoachTools } from './coach-tools.mjs';
@@ -59,13 +60,14 @@ function rate(req,bucket,count,windowMs){const key=bucket+':'+req.socket.remoteA
 setInterval(()=>{const now=Date.now();for(const[k,v]of sessions)if(v.expires<now)sessions.delete(k);for(const[k,v]of limits)if(v.until<now)limits.delete(k)},60000).unref();
 function session(req){const value=req.headers.cookie?.split(';').map(s=>s.trim()).find(s=>s.startsWith('sjl_session='))?.slice(12);const key=value?createHash('sha256').update(value).digest('hex'):'';const s=sessions.get(key);if(!s||s.expires<Date.now()){sessions.delete(key);return null}return{key,...s}}
 function requireAdmin(req){if(!session(req))throw new InputError('Sign in as administrator.',401)}
-async function body(req){if(!req.headers['content-type']?.startsWith('application/json'))throw new InputError('JSON content is required.',415);let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>16384)throw new InputError('Request is too large.',413);chunks.push(chunk)}try{const value=JSON.parse(Buffer.concat(chunks).toString());if(!value||typeof value!=='object'||Array.isArray(value))throw Error();return value}catch{throw new InputError('Invalid JSON request.')}}
+async function body(req){if(!req.headers['content-type']?.startsWith('application/json'))throw new InputError('JSON content is required.',415);let size=0,chunks=[];for await(const chunk of req){size+=chunk.length;if(size>65536)throw new InputError('Request is too large.',413);chunks.push(chunk)}try{const value=JSON.parse(Buffer.concat(chunks).toString());if(!value||typeof value!=='object'||Array.isArray(value))throw Error();return value}catch{throw new InputError('Invalid JSON request.')}}
 function validateStats(p){if(!clubs.includes(p.club))throw new InputError('Choose a league club.');if(!['U10','U13'].includes(p.ageGroup))throw new InputError('Choose U10 or U13.');return{name:text(p.name,'Player name'),club:p.club,ageGroup:p.ageGroup,goals:integer(p.goals,'Goals',0,10000),assists:integer(p.assists,'Assists',0,10000),cleanSheets:integer(p.cleanSheets,'Clean sheets',0,1000)}}
 const allPlayers=()=>db.prepare("SELECT * FROM players WHERE id NOT IN (SELECT statsPlayerId FROM league_entries WHERE status='archived' AND statsPlayerId IS NOT NULL) ORDER BY name COLLATE NOCASE").all();
 const league=setupLeague({db,root,clubs,InputError,json,text,integer,email,rate,body,cookieSecure});
 const clubAccess=setupClubAccess({db,clubs,InputError,json,text,integer,rate,body,cookieSecure,requireAdmin});
 const coachTools=setupCoachTools({db,InputError,json,text,integer,body});
 const matchStats=setupMatchStats({db,root,clubs,InputError,json,integer,body});
+const referee=setupReferee({db,root,InputError,json,text,integer,rate,body,cookieSecure,requireAdmin});
 const server=http.createServer(async(req,res)=>{
  res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','strict-origin-when-cross-origin');res.setHeader('Content-Security-Policy',csp);
  try{
@@ -76,6 +78,8 @@ const server=http.createServer(async(req,res)=>{
   }
   if(path==='/health'&&req.method==='GET')return json(res,200,{ok:true});
   if(path==='/api/stats'&&req.method==='GET')return json(res,200,{season:'2026/27',players:league.publicPlayers(allPlayers())});
+  if(path==='/assets/schedule.json'&&req.method==='GET')return json(res,200,referee.publicSchedule());
+  if(await referee.handle(req,res,path))return;
   if(await clubAccess.handle(req,res,path))return;
   if(path.startsWith('/api/admin/coach/')){
    requireAdmin(req);if(await coachTools.handle(req,res,path.replace('/api/admin/coach/','/api/coach/')))return;
@@ -167,6 +171,7 @@ const server=http.createServer(async(req,res)=>{
   let file;
   if(path==='/'||path==='/index.html')file=join(root,'index.html');
   else if(['/registration-player','/registration-player/','/league-register','/league-register/'].includes(path))file=join(root,'league-register.html');
+  else if(path==='/referee'||path==='/referee/')file=join(root,'referee.html');
   else if(path==='/parent'||path==='/parent/')file=join(root,'parent.html');
   else if(path==='/admin'||path==='/admin/'||path==='/admin.html')file=join(root,'admin.html');
   else if(path==='/club'||path==='/club/')file=join(root,'admin.html');
